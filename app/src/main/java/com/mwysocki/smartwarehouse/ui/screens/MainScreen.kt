@@ -39,8 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -54,8 +52,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.mwysocki.smartwarehouse.activities.NavigationItem
 import com.mwysocki.smartwarehouse.R
+import com.mwysocki.smartwarehouse.activities.NavigationItem
 import com.mwysocki.smartwarehouse.ui.theme.SmartWarehouseTheme
 import com.mwysocki.smartwarehouse.viewmodels.MainViewModel
 import kotlinx.coroutines.launch
@@ -68,7 +66,11 @@ enum class MainScreen(@StringRes val title: Int) {
 }
 
 @Composable
-fun MainApp(navController: NavHostController = rememberNavController(),mainViewModel: MainViewModel = viewModel(), logoutUser: () -> Unit) {
+fun MainApp(
+    navController: NavHostController = rememberNavController(),
+    mainViewModel: MainViewModel = viewModel(),
+    logoutUser: () -> Unit
+) {
     val state by mainViewModel.uiState.collectAsState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     // Get the name of the current screen

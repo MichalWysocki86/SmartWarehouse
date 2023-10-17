@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class MainViewModel: ViewModel() {
+class MainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(MainAppState())
     val uiState: StateFlow<MainAppState> = _uiState.asStateFlow()
 
@@ -18,6 +18,7 @@ class MainViewModel: ViewModel() {
     }
 
 }
+
 data class MainAppState(
     val showLogoutDialog: Boolean = false
 )
