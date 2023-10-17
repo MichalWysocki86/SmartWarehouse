@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "790183952203",
+    "project_id": "smartmagazine-c04dc",
+    "storage_bucket": "smartmagazine-c04dc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:790183952203:android:85cbaed69d6291747df2ce",
+        "android_client_info": {
+          "package_name": "com.mwysocki.smartwarehouse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJ57jzybv-IifrXT2CQBWNc0B7gNsoqH0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

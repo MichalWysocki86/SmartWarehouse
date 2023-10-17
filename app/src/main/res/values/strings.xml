@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SmartWarehouse</string>
+    <string name="home">Home</string>
+    <string name="profile">Profile</string>
+    <string name="products">Products</string>
+    <string name="logout">Logout</string>
+</resources>
