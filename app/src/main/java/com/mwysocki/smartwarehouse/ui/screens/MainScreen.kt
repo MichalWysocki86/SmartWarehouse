@@ -121,6 +121,9 @@ fun MainApp(
                     )
 
                 }
+                composable(route = MainScreen.Products.name) {
+                    ProductsScreen()
+                }
             }
             if (state.showLogoutDialog) {
                 ConfirmDialog(
