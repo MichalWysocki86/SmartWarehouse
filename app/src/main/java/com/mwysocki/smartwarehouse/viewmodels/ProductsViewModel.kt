@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class Product(
+    val id: String = "", // <-- Add this
     val name: String = "",
     val description: String = "",
     val qrCode: String = ""
@@ -76,19 +77,37 @@ class ProductsViewModel : ViewModel() {
     }
 
     fun addProductToFirestore(productName: String, productDescription: String) {
-        val newProduct = mapOf(
-            "name" to productName,
-            "description" to productDescription
-            // "qrCode" can be added later as needed
-        )
+        viewModelScope.launch {
+            try {
+                // Get a new document reference with an auto-generated ID
+                val newProductRef = FirebaseFirestore.getInstance().collection("Products").document()
 
-        FirebaseFirestore.getInstance().collection("Products").add(newProduct)
-            .addOnSuccessListener {
-                fetchProducts() // Refresh the list after adding a new product
-                hideAddProductDialog()
+                // Retrieve the unique product ID
+                val uniqueProductId = newProductRef.id
+
+                // Create the product with the unique ID, name, and description
+                val newProduct = Product(
+                    id = uniqueProductId,
+                    name = productName,
+                    description = productDescription
+                )
+
+                // Save the product to Firestore
+                newProductRef.set(newProduct)
+                    .addOnSuccessListener {
+                        // Handle successful addition
+                        hideAddProductDialog() // close the dialog
+                        fetchProducts()        // refresh the products list
+                    }
+                    .addOnFailureListener { exception ->
+                        // Handle the error here
+                        _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
+                    }
+            } catch (e: Exception) {
+                _productsState.value = ProductsState(errorMessage = e.localizedMessage)
             }
-            .addOnFailureListener { exception ->
-                _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
-            }
+        }
     }
+
+
 }
