@@ -1,9 +1,9 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.*
@@ -21,12 +21,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mwysocki.smartwarehouse.viewmodels.Product
 import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
+import java.io.ByteArrayInputStream
 
 @Composable
 fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val productsState by productsViewModel.productsState.collectAsState()
     val searchQuery by productsViewModel.searchQuery.collectAsState()
     val showDialog by productsViewModel.showAddProductDialog.collectAsState()
+
+    val selectedProduct by productsViewModel.selectedProduct.collectAsState()
+    val showProductDetailDialog by productsViewModel.showProductDetailDialog.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -75,7 +84,7 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
         } else {
             LazyColumn {
                 items(productsState.filteredProducts) { product ->
-                    ProductItem(product)
+                    ProductItem(product, productsViewModel::selectProduct)
                 }
             }
         }
@@ -87,11 +96,24 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                 onDismiss = productsViewModel::hideAddProductDialog
             )
         }
+
+        selectedProduct?.let { product ->
+            if (showProductDetailDialog) {
+                ProductDetailDialog(
+                    product = product,
+                    onDismiss = productsViewModel::hideProductDetailDialog
+                )
+            }
+        }
     }
 }
 @Composable
-fun ProductItem(product: Product) {
-    Card(modifier = Modifier.padding(8.dp)) {
+fun ProductItem(product: Product, onProductClick: (Product) -> Unit) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable { onProductClick(product) } // Add this
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -143,6 +165,48 @@ fun ProductAddDialog(
         onDismissRequest = onDismiss
     )
 }
+
+@Composable
+fun ProductDetailDialog(
+    product: Product,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Product Details") },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(text = "ID: ${product.id}")
+                Spacer(modifier = Modifier.height(16.dp))
+                QRCodeImage(qrCodeBase64 = product.qrCode)
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalCoilApi::class)
+@Composable
+fun QRCodeImage(qrCodeBase64: String) {
+    val byteStream = ByteArrayInputStream(Base64.decode(qrCodeBase64, Base64.DEFAULT))
+    val imageBitmap = BitmapFactory.decodeStream(byteStream)
+    val painter = rememberImagePainter(data = imageBitmap)
+
+    Image(
+        painter = painter,
+        contentDescription = "QR Code",
+        modifier = Modifier.size(200.dp) // Change this to adjust the QR code size on the screen
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewProductsScreen() {

@@ -8,6 +8,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.util.Base64
+import java.io.ByteArrayOutputStream
+
 data class Product(
     val id: String = "", // <-- Add this
     val name: String = "",
@@ -30,6 +37,22 @@ class ProductsViewModel : ViewModel() {
 
     private val _showAddProductDialog = MutableStateFlow(false)
     val showAddProductDialog: StateFlow<Boolean> = _showAddProductDialog.asStateFlow()
+
+    private val _selectedProduct = MutableStateFlow<Product?>(null)
+    val selectedProduct: StateFlow<Product?> = _selectedProduct.asStateFlow()
+
+    private val _showProductDetailDialog = MutableStateFlow(false)
+    val showProductDetailDialog: StateFlow<Boolean> = _showProductDetailDialog.asStateFlow()
+
+    fun selectProduct(product: Product) {
+        _selectedProduct.value = product
+        _showProductDetailDialog.value = true
+    }
+
+    fun hideProductDetailDialog() {
+        _showProductDetailDialog.value = false
+    }
+
     init {
         fetchProducts()
     }
@@ -53,7 +76,8 @@ class ProductsViewModel : ViewModel() {
                         filterProducts()
                     }
                     .addOnFailureListener { exception ->
-                        _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
+                        _productsState.value =
+                            ProductsState(errorMessage = exception.localizedMessage)
                     }
             } catch (e: Exception) {
                 _productsState.value = ProductsState(errorMessage = e.localizedMessage)
@@ -68,6 +92,7 @@ class ProductsViewModel : ViewModel() {
         }
         _productsState.value = _productsState.value.copy(filteredProducts = filteredList)
     }
+
     fun showAddProductDialog() {
         _showAddProductDialog.value = true
     }
@@ -76,38 +101,55 @@ class ProductsViewModel : ViewModel() {
         _showAddProductDialog.value = false
     }
 
+    private fun generateQRCode(content: String): String {
+        val qrCodeWriter = QRCodeWriter()
+        val bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, 512, 512)
+        val bitmap = Bitmap.createBitmap(512, 512, Bitmap.Config.RGB_565)
+        for (x in 0 until 512) {
+            for (y in 0 until 512) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+        return Base64.encodeToString(byteArray, Base64.DEFAULT)
+    }
+
     fun addProductToFirestore(productName: String, productDescription: String) {
         viewModelScope.launch {
             try {
                 // Get a new document reference with an auto-generated ID
-                val newProductRef = FirebaseFirestore.getInstance().collection("Products").document()
+                val newProductRef =
+                    FirebaseFirestore.getInstance().collection("Products").document()
 
                 // Retrieve the unique product ID
                 val uniqueProductId = newProductRef.id
 
-                // Create the product with the unique ID, name, and description
+                // Generate QR code with product's name and ID
+                val qrCodeData = generateQRCode("$productName:$uniqueProductId")
+
+                // Create the product with the unique ID, name, description, and QR code data
                 val newProduct = Product(
                     id = uniqueProductId,
                     name = productName,
-                    description = productDescription
+                    description = productDescription,
+                    qrCode = qrCodeData
                 )
 
                 // Save the product to Firestore
                 newProductRef.set(newProduct)
                     .addOnSuccessListener {
-                        // Handle successful addition
-                        hideAddProductDialog() // close the dialog
-                        fetchProducts()        // refresh the products list
+                        hideAddProductDialog()
+                        fetchProducts()
                     }
                     .addOnFailureListener { exception ->
-                        // Handle the error here
-                        _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
+                        _productsState.value =
+                            ProductsState(errorMessage = exception.localizedMessage)
                     }
             } catch (e: Exception) {
                 _productsState.value = ProductsState(errorMessage = e.localizedMessage)
             }
         }
     }
-
-
 }
