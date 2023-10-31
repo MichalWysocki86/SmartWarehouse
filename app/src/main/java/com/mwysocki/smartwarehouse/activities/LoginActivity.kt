@@ -37,7 +37,6 @@ class LoginActivity : ComponentActivity() {
 
     // Inner class for Login related functions
     object LoginManager {
-
         fun loginUser(context: Context, username: String, password: String, onError: (String) -> Unit) {
             val db = FirebaseFirestore.getInstance()
 
@@ -51,6 +50,7 @@ class LoginActivity : ComponentActivity() {
                         val user = result.documents[0].toObject(User::class.java)
                         if (user != null && user.password == password) {
                             setLoggedIn(context, true)
+                            UserPrefs.setLoggedInUsername(context, username)
                             if (context is LoginActivity) {
                                 context.navigateToMainActivity()
                             }
@@ -75,6 +75,21 @@ class LoginActivity : ComponentActivity() {
         fun getLoginStatus(context: Context): Boolean {
             val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
             return sharedPref.getBoolean("isLoggedIn", false)
+        }
+    }
+
+    object UserPrefs {
+        fun getLoggedInUsername(context: Context): String? {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            return sharedPref.getString("loggedInUsername", null)
+        }
+
+        fun setLoggedInUsername(context: Context, username: String) {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putString("loggedInUsername", username)
+                apply()
+            }
         }
     }
 }

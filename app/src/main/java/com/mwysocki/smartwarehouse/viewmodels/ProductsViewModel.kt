@@ -1,5 +1,6 @@
 package com.mwysocki.smartwarehouse.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,13 +14,16 @@ import com.google.zxing.qrcode.QRCodeWriter
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Base64
+import androidx.compose.foundation.layout.ColumnScope
+import com.mwysocki.smartwarehouse.activities.LoginActivity
 import java.io.ByteArrayOutputStream
 
 data class Product(
-    val id: String = "", // <-- Add this
+    val id: String = "",
     val name: String = "",
     val description: String = "",
-    val qrCode: String = ""
+    val qrCode: String = "",
+    val addedBy: String = ""
 )
 
 data class ProductsState(
@@ -116,9 +120,10 @@ class ProductsViewModel : ViewModel() {
         return Base64.encodeToString(byteArray, Base64.DEFAULT)
     }
 
-    fun addProductToFirestore(productName: String, productDescription: String) {
+    fun addProductToFirestore(productName: String, productDescription: String, context: Context) {
         viewModelScope.launch {
             try {
+                val loggedInUsername = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@launch
                 // Get a new document reference with an auto-generated ID
                 val newProductRef =
                     FirebaseFirestore.getInstance().collection("Products").document()
@@ -134,7 +139,8 @@ class ProductsViewModel : ViewModel() {
                     id = uniqueProductId,
                     name = productName,
                     description = productDescription,
-                    qrCode = qrCodeData
+                    qrCode = qrCodeData,
+                    addedBy = loggedInUsername
                 )
 
                 // Save the product to Firestore
@@ -146,6 +152,25 @@ class ProductsViewModel : ViewModel() {
                     .addOnFailureListener { exception ->
                         _productsState.value =
                             ProductsState(errorMessage = exception.localizedMessage)
+                    }
+            } catch (e: Exception) {
+                _productsState.value = ProductsState(errorMessage = e.localizedMessage)
+            }
+        }
+    }
+
+    fun deleteProductFromFirestore(product: Product) {
+        viewModelScope.launch {
+            try {
+                FirebaseFirestore.getInstance().collection("Products")
+                    .document(product.id)
+                    .delete()
+                    .addOnSuccessListener {
+                        hideProductDetailDialog()
+                        fetchProducts()
+                    }
+                    .addOnFailureListener { exception ->
+                        _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
                     }
             } catch (e: Exception) {
                 _productsState.value = ProductsState(errorMessage = e.localizedMessage)

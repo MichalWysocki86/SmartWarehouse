@@ -24,6 +24,7 @@ import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
 import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.foundation.Image
+import androidx.compose.ui.platform.LocalContext
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import java.io.ByteArrayInputStream
@@ -37,6 +38,7 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val selectedProduct by productsViewModel.selectedProduct.collectAsState()
     val showProductDetailDialog by productsViewModel.showProductDetailDialog.collectAsState()
 
+    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxSize()) {
 
         // Create a Row for the Search bar and Add button
@@ -92,7 +94,9 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
         // Displaying the Add Product dialog when showDialog is true
         if (showDialog) {
             ProductAddDialog(
-                onAddProduct = productsViewModel::addProductToFirestore,
+                onAddProduct = { productName, productDescription ->
+                    productsViewModel.addProductToFirestore(productName, productDescription, context )
+                },
                 onDismiss = productsViewModel::hideAddProductDialog
             )
         }
@@ -133,6 +137,7 @@ fun ProductAddDialog(
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
 
+
     AlertDialog(
         title = { Text("Add New Product") },
         text = {
@@ -169,29 +174,49 @@ fun ProductAddDialog(
 @Composable
 fun ProductDetailDialog(
     product: Product,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    productsViewModel: ProductsViewModel = viewModel() //tutaj zmienić troche bo idk czy dobrze
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Product Details") },
         text = {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally, // Added this to center horizontally
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp).fillMaxWidth()
             ) {
                 Text(text = "ID: ${product.id}")
                 Spacer(modifier = Modifier.height(16.dp))
                 QRCodeImage(qrCodeBase64 = product.qrCode)
+
+                Spacer(modifier = Modifier.height(16.dp))  // Additional spacing before the buttons
+
+                Row(
+                    horizontalArrangement = Arrangement.Center,  // Changed from End to Center
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = {
+                            productsViewModel.deleteProductFromFirestore(product)
+                        },
+                        colors = ButtonDefaults.buttonColors(contentColorFor(backgroundColor = Color.Red))
+                    ) {
+                        Text("Delete")
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))  // Increased the space for symmetry
+
+                    Button(onClick = onDismiss) {
+                        Text("Close")
+                    }
+                }
             }
         },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Close")
-            }
-        }
+        confirmButton = {}
     )
 }
+
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
