@@ -22,11 +22,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mwysocki.smartwarehouse.activities.loginUser
+import com.mwysocki.smartwarehouse.activities.LoginActivity
 
 @Composable
 fun LoginScreen() {
-    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
 
@@ -36,9 +36,9 @@ fun LoginScreen() {
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Username") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -56,7 +56,7 @@ fun LoginScreen() {
 
         val context = LocalContext.current
         Button(onClick = {
-            loginUser(context, email, password) { errorMsg ->
+            LoginActivity.LoginManager.loginUser(context, username, password) { errorMsg ->
                 error = errorMsg
             }
         }) {

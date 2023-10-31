@@ -5,31 +5,76 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.google.firebase.auth.FirebaseAuth
 import com.mwysocki.smartwarehouse.ui.screens.LoginScreen
+import com.google.firebase.firestore.FirebaseFirestore
 
+data class User(
+    val username: String = "",
+    val password: String = "" // Again, this should be hashed in a real-world scenario
+)
 
 class LoginActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            LoginScreen()
+
+        // Check if the user is already logged in
+        val isLoggedIn = LoginManager.getLoginStatus(this)
+        if (isLoggedIn) {
+            navigateToMainActivity()
+        } else {
+            setContent {
+                LoginScreen()
+            }
+        }
+    }
+
+    private fun navigateToMainActivity() {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+
+    // Inner class for Login related functions
+    object LoginManager {
+
+        fun loginUser(context: Context, username: String, password: String, onError: (String) -> Unit) {
+            val db = FirebaseFirestore.getInstance()
+
+            db.collection("Users")
+                .whereEqualTo("username", username)
+                .get()
+                .addOnSuccessListener { result ->
+                    if (result.isEmpty) {
+                        onError("Username not found")
+                    } else {
+                        val user = result.documents[0].toObject(User::class.java)
+                        if (user != null && user.password == password) {
+                            setLoggedIn(context, true)
+                            if (context is LoginActivity) {
+                                context.navigateToMainActivity()
+                            }
+                        } else {
+                            onError("Invalid password")
+                        }
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    onError(exception.message ?: "Unknown error")
+                }
+        }
+
+        fun setLoggedIn(context: Context, loggedIn: Boolean) {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putBoolean("isLoggedIn", loggedIn)
+                apply()
+            }
+        }
+
+        fun getLoginStatus(context: Context): Boolean {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            return sharedPref.getBoolean("isLoggedIn", false)
         }
     }
 }
-
-fun loginUser(context: Context, email: String, password: String, onError: (String) -> Unit) {
-    val auth = FirebaseAuth.getInstance()
-    auth.signInWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val intent = Intent(context, MainActivity::class.java)
-                // Optionally, you can pass user data to MainActivity
-                intent.putExtra("userEmail", email)
-                context.startActivity(intent)
-            } else {
-                onError(task.exception?.message ?: "Unknown error")
-            }
-        }
-}
-

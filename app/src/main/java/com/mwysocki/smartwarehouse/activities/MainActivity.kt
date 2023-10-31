@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.google.firebase.auth.FirebaseAuth
+import com.mwysocki.smartwarehouse.activities.LoginActivity.LoginManager.setLoggedIn
 import com.mwysocki.smartwarehouse.ui.screens.MainApp
 import com.mwysocki.smartwarehouse.ui.screens.MainScreen
 
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
 
     private fun logoutUser() {
         FirebaseAuth.getInstance().signOut()
+        setLoggedIn(this, false)
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         this.startActivity(intent)
