@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream
 data class Product(
     val id: String = "",
     val name: String = "",
+    val quantity: Int = 0,
     val description: String = "",
     val qrCode: String = "",
     val addedBy: String = ""
@@ -120,7 +121,7 @@ class ProductsViewModel : ViewModel() {
         return Base64.encodeToString(byteArray, Base64.DEFAULT)
     }
 
-    fun addProductToFirestore(productName: String, productDescription: String, context: Context) {
+    fun addProductToFirestore(productName: String, productDescription: String, productQuantity: Int, context: Context) {
         viewModelScope.launch {
             try {
                 val loggedInUsername = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@launch
@@ -138,6 +139,7 @@ class ProductsViewModel : ViewModel() {
                 val newProduct = Product(
                     id = uniqueProductId,
                     name = productName,
+                    quantity = productQuantity,
                     description = productDescription,
                     qrCode = qrCodeData,
                     addedBy = loggedInUsername

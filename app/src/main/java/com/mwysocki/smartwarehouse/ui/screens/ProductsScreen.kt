@@ -24,7 +24,9 @@ import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
 import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import java.io.ByteArrayInputStream
@@ -94,8 +96,8 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
         // Displaying the Add Product dialog when showDialog is true
         if (showDialog) {
             ProductAddDialog(
-                onAddProduct = { productName, productDescription ->
-                    productsViewModel.addProductToFirestore(productName, productDescription, context )
+                onAddProduct = { productName, productDescription, productQuantity ->
+                    productsViewModel.addProductToFirestore(productName, productDescription, productQuantity, context )
                 },
                 onDismiss = productsViewModel::hideAddProductDialog
             )
@@ -105,7 +107,9 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
             if (showProductDetailDialog) {
                 ProductDetailDialog(
                     product = product,
-                    onDismiss = productsViewModel::hideProductDetailDialog
+                    onDismiss = productsViewModel::hideProductDetailDialog,
+                    onDelete = { product -> productsViewModel.deleteProductFromFirestore(product)
+                    }
                 )
             }
         }
@@ -125,17 +129,18 @@ fun ProductItem(product: Product, onProductClick: (Product) -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = product.name)
-            Text(text = product.description)
+            Text(text = "Qty: ${product.quantity}")
         }
     }
 }
 @Composable
 fun ProductAddDialog(
-    onAddProduct: (String, String) -> Unit,
+    onAddProduct: (String, String, Int) -> Unit,
     onDismiss: () -> Unit
 ) {
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
+    var productQuantity by remember { mutableStateOf(0) }
 
 
     AlertDialog(
@@ -148,16 +153,28 @@ fun ProductAddDialog(
                     label = { Text("Product Name") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
                 TextField(
                     value = productDescription,
                     onValueChange = { productDescription = it },
                     label = { Text("Product Description") }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextField(
+                    value = productQuantity.toString(),
+                    onValueChange = { newValue ->
+                        // Only update if the new value can be converted to an Int or is blank
+                        productQuantity = newValue.toIntOrNull() ?: 0
+                    },
+                    label = { Text("Product Quantity") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number) // Set the keyboard type to number
+                )
             }
         },
         confirmButton = {
             Button(onClick = {
-                onAddProduct(productName, productDescription)
+                onAddProduct(productName, productDescription, productQuantity)
             }) {
                 Text("Add")
             }
@@ -175,37 +192,39 @@ fun ProductAddDialog(
 fun ProductDetailDialog(
     product: Product,
     onDismiss: () -> Unit,
-    productsViewModel: ProductsViewModel = viewModel() //tutaj zmienić troche bo idk czy dobrze
+    onDelete: (Product) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Product Details") },
         text = {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally, // Added this to center horizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(16.dp).fillMaxWidth()
             ) {
                 Text(text = "ID: ${product.id}")
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = ": ${product.description}")
                 Spacer(modifier = Modifier.height(16.dp))
                 QRCodeImage(qrCodeBase64 = product.qrCode)
 
                 Spacer(modifier = Modifier.height(16.dp))  // Additional spacing before the buttons
 
                 Row(
-                    horizontalArrangement = Arrangement.Center,  // Changed from End to Center
+                    horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Button(
                         onClick = {
-                            productsViewModel.deleteProductFromFirestore(product)
+                            onDelete(product)  // Call the provided delete handler
                         },
                         colors = ButtonDefaults.buttonColors(contentColorFor(backgroundColor = Color.Red))
                     ) {
                         Text("Delete")
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))  // Increased the space for symmetry
+                    Spacer(modifier = Modifier.width(16.dp))
 
                     Button(onClick = onDismiss) {
                         Text("Close")
