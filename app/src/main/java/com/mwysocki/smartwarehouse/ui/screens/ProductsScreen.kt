@@ -25,12 +25,16 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import java.io.ByteArrayInputStream
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 
+val LightBlue = Color(0xFFADD8E6)  // Define LightBlue color
 @Composable
 fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val productsState by productsViewModel.productsState.collectAsState()
@@ -40,87 +44,168 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val selectedProduct by productsViewModel.selectedProduct.collectAsState()
     val showProductDetailDialog by productsViewModel.showProductDetailDialog.collectAsState()
 
+    var showQuantityDialog by remember { mutableStateOf(false) }
+    var currentSelectedProduct by remember { mutableStateOf<Product?>(null) }
+    var currentQuantity by remember { mutableStateOf(0) }
+
+    var createPackageMode by remember { mutableStateOf(false) }
+    val selectedProductQuantities = remember { mutableMapOf<String, Int>() }
     val context = LocalContext.current
-    Column(modifier = Modifier.fillMaxSize()) {
 
-        // Create a Row for the Search bar and Add button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically // This ensures all items inside the Row are vertically centered
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = {
-                    productsViewModel.setSearchQuery(it)
-                },
-                label = { Text("Search") },
-                modifier = Modifier.weight(1f)  // Assign weight to make it take up available space
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))  // Spacer for some space between TextField and Button
-
-            Button(
-                onClick = { productsViewModel.showAddProductDialog() },
-                modifier = Modifier.defaultMinSize(minWidth = 56.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Product")
-            }
-        }
-
-        Text(
-            text = "Total products: ${productsState.allProducts.size}",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-        )
-
-        if (productsState.errorMessage != null) {
-            Text(
-                text = "Error: ${productsState.errorMessage}",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                color = Color.Red,
-            )
-        } else {
-            LazyColumn {
-                items(productsState.filteredProducts) { product ->
-                    ProductItem(product, productsViewModel::selectProduct)
+    Scaffold(
+        bottomBar = {
+            BottomAppBar {
+                if (createPackageMode) {
+                    Button(
+                        onClick = {
+                            productsViewModel.createAndSavePackage(
+                                createdBy = "creatorUsername",  // Replace with the actual creator's username
+                                selectedProducts = selectedProductQuantities
+                            )
+                            createPackageMode = false
+                            selectedProductQuantities.clear()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Create Package")
+                    }
+                    Button(
+                        onClick = { /* TODO: Handle "List" action */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("List")
+                    }
+                    Button(
+                        onClick = { createPackageMode = false },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Back")
+                    }
+                } else {
+                    Button(
+                        onClick = { createPackageMode = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Create Package")
+                    }
                 }
             }
         }
-
-        // Displaying the Add Product dialog when showDialog is true
-        if (showDialog) {
-            ProductAddDialog(
-                onAddProduct = { productName, productDescription, productQuantity ->
-                    productsViewModel.addProductToFirestore(productName, productDescription, productQuantity, context )
-                },
-                onDismiss = productsViewModel::hideAddProductDialog
-            )
-        }
-
-        selectedProduct?.let { product ->
-            if (showProductDetailDialog) {
-                ProductDetailDialog(
-                    product = product,
-                    onDismiss = productsViewModel::hideProductDetailDialog,
-                    onDelete = { product -> productsViewModel.deleteProductFromFirestore(product)
-                    }
+    ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { productsViewModel.setSearchQuery(it) },
+                    label = { Text("Search") },
+                    modifier = Modifier.weight(1f)
                 )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = { productsViewModel.showAddProductDialog() },
+                    modifier = Modifier.defaultMinSize(minWidth = 56.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Product")
+                }
+            }
+
+            Text(
+                text = "Total products: ${productsState.allProducts.size}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
+
+            if (productsState.errorMessage != null) {
+                Text(
+                    text = "Error: ${productsState.errorMessage}",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            } else {
+                LazyColumn {
+                    items(productsState.filteredProducts) { product ->
+                        ProductItem(
+                            product = product,
+                            isSelected = selectedProductQuantities.containsKey(product.id),
+                            showCheckbox = createPackageMode,
+                            onProductClick = {
+                                if (createPackageMode) {
+                                    if (selectedProductQuantities.containsKey(product.id)) {
+                                        selectedProductQuantities.remove(product.id)
+                                    } else {
+                                        currentSelectedProduct = product
+                                        showQuantityDialog = true
+                                    }
+                                } else {
+                                    productsViewModel.selectProduct(product)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            // ... existing QuantityDialog code ...
+            if (showQuantityDialog && currentSelectedProduct != null) {
+                QuantityDialog(
+                    product = currentSelectedProduct,
+                    onQuantityConfirm = { quantity ->
+                        selectedProductQuantities[currentSelectedProduct!!.id] = quantity
+                        showQuantityDialog = false
+                    },
+                    onDismiss = { showQuantityDialog = false }
+                )
+            }
+
+            if (showDialog) {
+                ProductAddDialog(
+                    onAddProduct = { productName, productDescription, productQuantity ->
+                        productsViewModel.addProductToFirestore(
+                            productName,
+                            productDescription,
+                            productQuantity,
+                            context
+                        )
+                    },
+                    onDismiss = productsViewModel::hideAddProductDialog
+                )
+            }
+
+            selectedProduct?.let { product ->
+                if (showProductDetailDialog) {
+                    ProductDetailDialog(
+                        product = product,
+                        onDismiss = productsViewModel::hideProductDetailDialog,
+                        onDelete = { productsViewModel.deleteProductFromFirestore(it) }
+                    )
+                }
             }
         }
     }
 }
 @Composable
-fun ProductItem(product: Product, onProductClick: (Product) -> Unit) {
+fun ProductItem(
+    product: Product,
+    isSelected: Boolean,
+    showCheckbox: Boolean,
+    onProductClick: (Product) -> Unit
+) {
     Card(
         modifier = Modifier
             .padding(8.dp)
-            .clickable { onProductClick(product) } // Add this
+            .background(if (isSelected) LightBlue else MaterialTheme.colorScheme.surface)
+            .clickable(enabled = !showCheckbox) { onProductClick(product) }
     ) {
         Row(
             modifier = Modifier
@@ -128,8 +213,16 @@ fun ProductItem(product: Product, onProductClick: (Product) -> Unit) {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = product.name)
-            Text(text = "Qty: ${product.quantity}")
+            Column {
+                Text(text = product.name)
+                Text(text = "Qty: ${product.quantity}")
+            }
+            if (showCheckbox) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onProductClick(product) }
+                )
+            }
         }
     }
 }
@@ -236,6 +329,41 @@ fun ProductDetailDialog(
     )
 }
 
+@Composable
+fun QuantityDialog(product: Product?, onQuantityConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+    if (product != null) {
+        var quantity by remember { mutableStateOf(0) }
+
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = { Text("Select Quantity") },
+            text = {
+                Column {
+                    Text("Product: ${product.name}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = quantity.toString(),
+                        onValueChange = { newValue ->
+                            quantity = newValue.toIntOrNull() ?: 0
+                        },
+                        label = { Text("Quantity") },
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = { onQuantityConfirm(quantity) }) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { onDismiss() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
@@ -247,7 +375,7 @@ fun QRCodeImage(qrCodeBase64: String) {
     Image(
         painter = painter,
         contentDescription = "QR Code",
-        modifier = Modifier.size(200.dp) // Change this to adjust the QR code size on the screen
+        modifier = Modifier.size(200.dp)
     )
 }
 

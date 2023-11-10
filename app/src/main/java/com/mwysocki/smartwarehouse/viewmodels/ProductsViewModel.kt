@@ -17,11 +17,12 @@ import android.util.Base64
 import androidx.compose.foundation.layout.ColumnScope
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import java.io.ByteArrayOutputStream
+import java.util.*
 
 data class Product(
     val id: String = "",
     val name: String = "",
-    val quantity: Int = 0,
+    var quantity: Int = 0,
     val description: String = "",
     val qrCode: String = "",
     val addedBy: String = ""
@@ -31,6 +32,19 @@ data class ProductsState(
     val allProducts: List<Product> = listOf(),
     val filteredProducts: List<Product> = listOf(),
     val errorMessage: String? = null
+)
+
+data class Package(
+    val id: String = UUID.randomUUID().toString(),
+    val creationDate: Date = Date(),
+    val createdBy: String,
+    val products: List<PackageProduct>
+)
+
+data class PackageProduct(
+    val productId: String,
+    val name: String,
+    val quantity: Int
 )
 
 class ProductsViewModel : ViewModel() {
@@ -48,6 +62,56 @@ class ProductsViewModel : ViewModel() {
 
     private val _showProductDetailDialog = MutableStateFlow(false)
     val showProductDetailDialog: StateFlow<Boolean> = _showProductDetailDialog.asStateFlow()
+
+    // Map to store selected product IDs and their quantities
+    private val _selectedProductQuantities = mutableMapOf<String, Int>()
+    val selectedProductQuantities: Map<String, Int> get() = _selectedProductQuantities
+
+
+
+    // Function to select a product and set its quantity
+    fun selectProductForPackage(productId: String, quantity: Int) {
+        if (quantity > 0) {
+            _selectedProductQuantities[productId] = quantity
+        } else {
+            _selectedProductQuantities.remove(productId)
+        }
+    }
+
+    // Function to create a package
+
+
+    // Function to create and save a package to Firestore
+    fun createAndSavePackage(createdBy: String, selectedProducts: Map<String, Int>) {
+        viewModelScope.launch {
+            try {
+                val packageProducts = selectedProducts.map { (productId, quantity) ->
+                    val product = productsState.value.allProducts.find { it.id == productId }
+                    PackageProduct(productId, product?.name ?: "", quantity)
+                }
+
+                val newPackage = Package(
+                    id = UUID.randomUUID().toString(),
+                    creationDate = Date(),
+                    createdBy = createdBy,
+                    products = packageProducts
+                )
+
+                FirebaseFirestore.getInstance().collection("Packages").document(newPackage.id)
+                    .set(newPackage)
+                    .addOnSuccessListener {
+                        // Handle success
+                    }
+                    .addOnFailureListener { e ->
+                        // Handle failure
+                    }
+            } catch (e: Exception) {
+                // Handle any exceptions
+            }
+        }
+    }
+
+
 
     fun selectProduct(product: Product) {
         _selectedProduct.value = product
@@ -67,7 +131,7 @@ class ProductsViewModel : ViewModel() {
         filterProducts()
     }
 
-    private fun fetchProducts() {
+    fun fetchProducts() {
         viewModelScope.launch {
             try {
                 val productList = mutableListOf<Product>()

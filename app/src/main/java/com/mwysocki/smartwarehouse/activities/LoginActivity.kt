@@ -10,7 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 data class User(
     val username: String = "",
-    val password: String = "" // Again, this should be hashed in a real-world scenario
+    val password: String = "" // add hashing??
 )
 
 class LoginActivity : ComponentActivity() {

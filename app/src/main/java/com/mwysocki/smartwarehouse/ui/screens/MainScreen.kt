@@ -4,16 +4,21 @@ import android.annotation.SuppressLint
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -62,6 +67,7 @@ enum class MainScreen(@StringRes val title: Int) {
     Home(R.string.home),
     Profile(R.string.profile),
     Products(R.string.products),
+    AddPackage(R.string.add_package),
     Logout(R.string.logout)
 }
 
@@ -89,9 +95,13 @@ fun MainApp(
     ) {
         Scaffold(
             topBar = {
-                MainAppBar(currentScreen) {
-                    scope.launch { drawerState.open() }
-                }
+                MainAppBar(
+                    currentScreen,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    },
+                    navController = navController // Pass the navController here
+                )
             }
         ) { paddingValues ->
             NavHost(
@@ -124,6 +134,10 @@ fun MainApp(
                 composable(route = MainScreen.Products.name) {
                     ProductsScreen()
                 }
+
+//                composable(route = MainScreen.AddPackage.name) {
+//                    AddPackageScreen()
+//                }
             }
             if (state.showLogoutDialog) {
                 ConfirmDialog(
@@ -144,7 +158,11 @@ fun MainApp(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppBar(currentScreen: MainScreen, onMenuClick: () -> Unit) {
+fun MainAppBar(
+    currentScreen: MainScreen,
+    onMenuClick: () -> Unit,
+    navController: NavHostController
+) {
     TopAppBar(
         title = {
             Text(text = stringResource(id = currentScreen.title))
@@ -154,6 +172,20 @@ fun MainAppBar(currentScreen: MainScreen, onMenuClick: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Menu"
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = { navController.navigate(MainScreen.AddPackage.name) }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.NoteAdd,
+                    contentDescription = "Add Package Manually"
+                )
+            }
+            IconButton(onClick = { /* do something */ }) {
+                Icon(
+                    imageVector = Icons.Filled.QrCodeScanner,
+                    contentDescription = "Add Package by Qr Code"
                 )
             }
         }
