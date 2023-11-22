@@ -25,7 +25,6 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import coil.annotation.ExperimentalCoilApi
@@ -273,7 +272,6 @@ fun ProductAddDialog(
     var productDescription by remember { mutableStateOf("") }
     var productQuantity by remember { mutableStateOf(0) }
 
-
     AlertDialog(
         title = { Text("Add New Product") },
         text = {
@@ -371,6 +369,7 @@ fun ProductDetailDialog(
 fun QuantityDialog(product: Product?, onQuantityConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
     if (product != null) {
         var quantity by remember { mutableStateOf(0) }
+        val maxQuantity = product.quantity
 
         AlertDialog(
             onDismissRequest = { onDismiss() },
@@ -378,19 +377,25 @@ fun QuantityDialog(product: Product?, onQuantityConfirm: (Int) -> Unit, onDismis
             text = {
                 Column {
                     Text("Product: ${product.name}")
+                    Text("Available: $maxQuantity")
                     Spacer(modifier = Modifier.height(8.dp))
                     TextField(
                         value = quantity.toString(),
                         onValueChange = { newValue ->
-                            quantity = newValue.toIntOrNull() ?: 0
+                            val newQuantity = newValue.toIntOrNull() ?: 0
+                            quantity = newQuantity.coerceIn(0, maxQuantity)
                         },
                         label = { Text("Quantity") },
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                        isError = quantity == 0
                     )
                 }
             },
             confirmButton = {
-                Button(onClick = { onQuantityConfirm(quantity) }) {
+                Button(
+                    onClick = { if (quantity > 0) onQuantityConfirm(quantity) },
+                    enabled = quantity > 0
+                ) {
                     Text("Confirm")
                 }
             },
