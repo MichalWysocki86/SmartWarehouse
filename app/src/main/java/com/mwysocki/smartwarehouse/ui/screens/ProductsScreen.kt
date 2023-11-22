@@ -33,6 +33,7 @@ import coil.compose.rememberImagePainter
 import java.io.ByteArrayInputStream
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import com.mwysocki.smartwarehouse.viewmodels.ProductsState
 
 val LightBlue = Color(0xFFADD8E6)  // Define LightBlue color
 @Composable
@@ -50,6 +51,7 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
 
     var createPackageMode by remember { mutableStateOf(false) }
     val selectedProductQuantities = remember { mutableMapOf<String, Int>() }
+    var showPackageSummaryDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Scaffold(
@@ -57,24 +59,12 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
             BottomAppBar {
                 if (createPackageMode) {
                     Button(
-                        onClick = {
-                            productsViewModel.createAndSavePackage(
-                                createdBy = "creatorUsername",  // Replace with the actual creator's username
-                                selectedProducts = selectedProductQuantities
-                            )
-                            createPackageMode = false
-                            selectedProductQuantities.clear()
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        onClick = { showPackageSummaryDialog = true },
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("Create Package")
                     }
-                    Button(
-                        onClick = { /* TODO: Handle "List" action */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("List")
-                    }
+
                     Button(
                         onClick = { createPackageMode = false },
                         modifier = Modifier.weight(1f)
@@ -182,6 +172,22 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                 )
             }
 
+            if (showPackageSummaryDialog) {
+                PackageSummaryDialog(
+                    selectedProducts = selectedProductQuantities,
+                    productsState = productsState,
+                    onConfirm = {
+                        productsViewModel.createAndSavePackage(context, selectedProductQuantities)
+                        createPackageMode = false
+                        selectedProductQuantities.clear()
+                        showPackageSummaryDialog = false
+                    },
+                    onDismiss = {
+                        showPackageSummaryDialog = false
+                    }
+                )
+            }
+
             selectedProduct?.let { product ->
                 if (showProductDetailDialog) {
                     ProductDetailDialog(
@@ -193,6 +199,38 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
             }
         }
     }
+}
+
+@Composable
+fun PackageSummaryDialog(
+    selectedProducts: Map<String, Int>,
+    productsState: ProductsState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Package Summary") },
+        text = {
+            Column {
+                Text("Selected Products:")
+                selectedProducts.forEach { (productId, quantity) ->
+                    val productName = productsState.allProducts.find { it.id == productId }?.name ?: "Unknown"
+                    Text("$productName: $quantity")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Back")
+            }
+        }
+    )
 }
 @Composable
 fun ProductItem(

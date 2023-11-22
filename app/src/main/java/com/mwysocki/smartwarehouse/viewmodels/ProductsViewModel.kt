@@ -14,6 +14,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Base64
+import android.util.Log
 import androidx.compose.foundation.layout.ColumnScope
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import java.io.ByteArrayOutputStream
@@ -38,14 +39,12 @@ data class Package(
     val id: String = UUID.randomUUID().toString(),
     val creationDate: Date = Date(),
     val createdBy: String,
-    val products: List<PackageProduct>
+    val assignedTo: String,
+    val isDone: Boolean,
+    val products: Map<String, Int>, // Product ID as key, quantity as value
+    val productIds: List<String> = products.keys.toList() // List of product IDs for querying
 )
 
-data class PackageProduct(
-    val productId: String,
-    val name: String,
-    val quantity: Int
-)
 
 class ProductsViewModel : ViewModel() {
     private val _productsState = MutableStateFlow(ProductsState())
@@ -63,50 +62,40 @@ class ProductsViewModel : ViewModel() {
     private val _showProductDetailDialog = MutableStateFlow(false)
     val showProductDetailDialog: StateFlow<Boolean> = _showProductDetailDialog.asStateFlow()
 
-    // Map to store selected product IDs and their quantities
-    private val _selectedProductQuantities = mutableMapOf<String, Int>()
-    val selectedProductQuantities: Map<String, Int> get() = _selectedProductQuantities
-
-
-
-    // Function to select a product and set its quantity
-    fun selectProductForPackage(productId: String, quantity: Int) {
-        if (quantity > 0) {
-            _selectedProductQuantities[productId] = quantity
-        } else {
-            _selectedProductQuantities.remove(productId)
-        }
-    }
-
-    // Function to create a package
-
 
     // Function to create and save a package to Firestore
-    fun createAndSavePackage(createdBy: String, selectedProducts: Map<String, Int>) {
+    fun createAndSavePackage(context: Context, selectedProducts: Map<String, Int>) {
         viewModelScope.launch {
             try {
-                val packageProducts = selectedProducts.map { (productId, quantity) ->
-                    val product = productsState.value.allProducts.find { it.id == productId }
-                    PackageProduct(productId, product?.name ?: "", quantity)
-                }
+                // Extract product IDs for querying
+                val productIds = selectedProducts.keys.toList()
+                val createdBy = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: "Unknown User"
 
+                // Create a new package with product IDs and the creator's username
                 val newPackage = Package(
                     id = UUID.randomUUID().toString(),
                     creationDate = Date(),
                     createdBy = createdBy,
-                    products = packageProducts
+                    assignedTo = "",
+                    isDone = false,
+                    products = selectedProducts,
+                    productIds = productIds
                 )
 
+                // Save the package to Firestore
                 FirebaseFirestore.getInstance().collection("Packages").document(newPackage.id)
                     .set(newPackage)
                     .addOnSuccessListener {
                         // Handle success
+                        Log.d("Firestore", "Package created successfully by $createdBy.")
                     }
                     .addOnFailureListener { e ->
                         // Handle failure
+                        Log.e("Firestore", "Error creating package", e)
                     }
             } catch (e: Exception) {
                 // Handle any exceptions
+                Log.e("Firestore", "Exception in creating package", e)
             }
         }
     }
@@ -131,7 +120,7 @@ class ProductsViewModel : ViewModel() {
         filterProducts()
     }
 
-    fun fetchProducts() {
+    private fun fetchProducts() {
         viewModelScope.launch {
             try {
                 val productList = mutableListOf<Product>()
