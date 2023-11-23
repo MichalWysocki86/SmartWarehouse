@@ -15,7 +15,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Base64
 import android.util.Log
-import androidx.compose.foundation.layout.ColumnScope
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -36,13 +35,14 @@ data class ProductsState(
 )
 
 data class Package(
-    val id: String = UUID.randomUUID().toString(),
-    val creationDate: Date = Date(),
-    val createdBy: String,
-    val assignedTo: String,
-    val isDone: Boolean,
-    val products: Map<String, Int>, // Product ID as key, quantity as value
-    val productIds: List<String> = products.keys.toList() // List of product IDs for querying
+    val id: String = "",
+    val creationDate: Date? = null,
+    val createdBy: String = "",
+    val assignedTo: String = "",
+    val isDone: Boolean = false,
+    var products: Map<String, Int> = emptyMap(), // Make sure to provide a default empty map
+    // Ensure that the productIds list is derived from the products map to avoid deserialization issues
+    val productIds: List<String> = products.keys.toList()
 )
 
 

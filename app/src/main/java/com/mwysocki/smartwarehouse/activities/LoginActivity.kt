@@ -80,6 +80,7 @@ class LoginActivity : ComponentActivity() {
 
     object UserPrefs {
         fun getLoggedInUsername(context: Context): String? {
+            // The context object is correctly used to call getSharedPreferences
             val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
             return sharedPref.getString("loggedInUsername", null)
         }

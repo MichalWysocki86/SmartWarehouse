@@ -15,12 +15,14 @@ import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Warehouse
 import androidx.compose.material3.AlertDialog
@@ -61,13 +63,14 @@ import com.mwysocki.smartwarehouse.R
 import com.mwysocki.smartwarehouse.activities.NavigationItem
 import com.mwysocki.smartwarehouse.ui.theme.SmartWarehouseTheme
 import com.mwysocki.smartwarehouse.viewmodels.MainViewModel
+import com.mwysocki.smartwarehouse.viewmodels.PackagesViewModel
 import kotlinx.coroutines.launch
 
 enum class MainScreen(@StringRes val title: Int) {
     Home(R.string.home),
     Profile(R.string.profile),
     Products(R.string.products),
-    AddPackage(R.string.add_package),
+    Packages(R.string.packages),
     Logout(R.string.logout)
 }
 
@@ -124,20 +127,13 @@ fun MainApp(
                     )
                 }
                 composable(route = MainScreen.Products.name) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Green)
-                            .fillMaxSize()
-                    )
-
-                }
-                composable(route = MainScreen.Products.name) {
                     ProductsScreen()
                 }
+                composable(route = MainScreen.Packages.name) {
+                    PackagesScreen()
+                }
 
-//                composable(route = MainScreen.AddPackage.name) {
-//                    AddPackageScreen()
-//                }
+
             }
             if (state.showLogoutDialog) {
                 ConfirmDialog(
@@ -176,12 +172,6 @@ fun MainAppBar(
             }
         },
         actions = {
-            IconButton(onClick = { navController.navigate(MainScreen.AddPackage.name) }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.NoteAdd,
-                    contentDescription = "Add Package Manually"
-                )
-            }
             IconButton(onClick = { /* do something */ }) {
                 Icon(
                     imageVector = Icons.Filled.QrCodeScanner,
@@ -209,16 +199,22 @@ fun NavigationDrawer(
                 route = MainScreen.Home
             ),
             NavigationItem(
-                title = "Profile",
+                title = stringResource(id = R.string.profile),
                 selectedIcon = Icons.Filled.Person,
                 unselectedIcon = Icons.Outlined.Person,
                 route = MainScreen.Profile
             ),
             NavigationItem(
-                title = "Products",
+                title = stringResource(id = R.string.products),
                 selectedIcon = Icons.Filled.Warehouse,
                 unselectedIcon = Icons.Outlined.Warehouse,
                 route = MainScreen.Products
+            ),
+            NavigationItem(
+                title = stringResource(id = R.string.packages),
+                selectedIcon = Icons.Filled.LocalShipping,
+                unselectedIcon = Icons.Outlined.LocalShipping,
+                route = MainScreen.Packages
             ),
             NavigationItem(
                 title = "Logout",
