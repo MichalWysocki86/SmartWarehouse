@@ -4,20 +4,16 @@ import android.annotation.SuppressLint
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Warehouse
@@ -51,6 +47,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -60,6 +57,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mwysocki.smartwarehouse.R
+import com.mwysocki.smartwarehouse.activities.LoginActivity
 import com.mwysocki.smartwarehouse.activities.NavigationItem
 import com.mwysocki.smartwarehouse.ui.theme.SmartWarehouseTheme
 import com.mwysocki.smartwarehouse.viewmodels.MainViewModel
@@ -113,11 +111,17 @@ fun MainApp(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable(route = MainScreen.Home.name) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Blue)
-                            .fillMaxSize()
-                    )
+
+                    val context = LocalContext.current
+                    val username = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@composable
+                    val packagesViewModel: PackagesViewModel = viewModel()
+
+                    // This will load the packages assigned to the logged-in user
+                    packagesViewModel.loadAssignedPackages(username)
+
+                    // Now you can use the assignedPackages StateFlow to collect and display the packages
+                    val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
+                    AssignedPackagesScreen(assignedPackages)
                 }
                 composable(route = MainScreen.Profile.name) {
                     Box(

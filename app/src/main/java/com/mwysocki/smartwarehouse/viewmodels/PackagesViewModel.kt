@@ -22,6 +22,30 @@ class PackagesViewModel : ViewModel() {
         loadUnassignedPackages()
     }
 
+    private val _assignedPackages = MutableStateFlow<List<Package>>(emptyList())
+    val assignedPackages: StateFlow<List<Package>> = _assignedPackages.asStateFlow()
+
+    // ...
+
+    fun loadAssignedPackages(username: String) {
+        viewModelScope.launch {
+            FirebaseFirestore.getInstance().collection("Packages")
+                .whereEqualTo("assignedTo", username)
+                .get()
+                .addOnSuccessListener { result ->
+                    val packages = result.mapNotNull { document ->
+                        val pkg = document.toObject(Package::class.java)
+                        pkg?.products = pkg.products.mapKeys { entry ->
+                            productsMap[entry.key] ?: "Unknown Product"
+                        }
+                        pkg
+                    }
+                    _assignedPackages.value = packages
+                }
+        }
+    }
+
+
     private fun fetchAllProducts() {
         viewModelScope.launch {
             FirebaseFirestore.getInstance().collection("Products").get().addOnSuccessListener { result ->
