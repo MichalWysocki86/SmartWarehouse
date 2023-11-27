@@ -80,8 +80,18 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1")
+    implementation("com.google.mlkit:barcode-scanning:17.0.3")
+    implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+    
+    implementation ("androidx.camera:camera-core:1.0.2")
+    implementation ("androidx.camera:camera-camera2:1.0.2")
+    implementation ("androidx.camera:camera-lifecycle:1.0.2")
+    implementation ("androidx.camera:camera-view:1.0.0-alpha29")
+
+
+
+
 
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies

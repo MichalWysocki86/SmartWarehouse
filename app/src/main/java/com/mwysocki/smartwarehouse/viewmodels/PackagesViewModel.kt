@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class PackagesViewModel : ViewModel() {
     private val _unassignedPackages = MutableStateFlow<List<Package>>(emptyList())
@@ -25,12 +28,13 @@ class PackagesViewModel : ViewModel() {
     private val _assignedPackages = MutableStateFlow<List<Package>>(emptyList())
     val assignedPackages: StateFlow<List<Package>> = _assignedPackages.asStateFlow()
 
-    // ...
+    
 
     fun loadAssignedPackages(username: String) {
         viewModelScope.launch {
             FirebaseFirestore.getInstance().collection("Packages")
                 .whereEqualTo("assignedTo", username)
+                .whereEqualTo("done", false)
                 .get()
                 .addOnSuccessListener { result ->
                     val packages = result.mapNotNull { document ->
@@ -61,6 +65,7 @@ class PackagesViewModel : ViewModel() {
         viewModelScope.launch {
             FirebaseFirestore.getInstance().collection("Packages")
                 .whereEqualTo("assignedTo", "")
+                .whereEqualTo("done", false)
                 .get()
                 .addOnSuccessListener { result ->
                     val packages = result.mapNotNull { document ->
@@ -91,5 +96,49 @@ class PackagesViewModel : ViewModel() {
             .addOnFailureListener { e ->
                 Log.e("PackagesViewModel", "Error assigning package", e)
             }
+    }
+
+    fun sendPackageToArchive(packageId: String, username: String) {
+        viewModelScope.launch {
+            val firestore = FirebaseFirestore.getInstance()
+            val packageRef = firestore.collection("Packages").document(packageId)
+
+            // Get the current package data
+            packageRef.get().addOnSuccessListener { documentSnapshot ->
+                val packageData = documentSnapshot.toObject(Package::class.java)
+                packageData?.let { pkg ->
+                    // Iterate over each product in the package
+                    pkg.products.forEach { (productId, quantityOrdered) ->
+                        // Reference to the product document
+                        val productRef = firestore.collection("Products").document(productId)
+                        // Update the product quantity
+                        productRef.get().addOnSuccessListener { productSnapshot ->
+                            val product = productSnapshot.toObject(Product::class.java)
+                            product?.let {
+                                val newQuantity = product.quantity - quantityOrdered
+                                productRef.update("quantity", newQuantity)
+                            }
+                        }
+                    }
+                    // Set the 'done' field to true and move the package to the archive
+                    val updatedPackageData = pkg.copy(isDone = true)
+                    firestore.collection("PackagesArchive")
+                        .document(packageId)
+                        .set(updatedPackageData)
+                        .addOnSuccessListener {
+                            // Delete the original document from the Packages collection
+                            packageRef.delete()
+                            Log.d("PackagesViewModel", "Package $packageId sent to archive and original deleted.")
+                            // Optionally, refresh the list of packages if needed
+                            // loadUnassignedPackages()
+                            loadAssignedPackages(username)
+                        }.addOnFailureListener { e ->
+                            Log.e("PackagesViewModel", "Error sending package to archive", e)
+                        }
+                }
+            }.addOnFailureListener { e ->
+                Log.e("PackagesViewModel", "Error retrieving package data", e)
+            }
+        }
     }
 }
