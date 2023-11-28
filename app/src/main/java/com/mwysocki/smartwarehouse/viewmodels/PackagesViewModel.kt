@@ -28,7 +28,7 @@ class PackagesViewModel : ViewModel() {
     private val _assignedPackages = MutableStateFlow<List<Package>>(emptyList())
     val assignedPackages: StateFlow<List<Package>> = _assignedPackages.asStateFlow()
 
-    
+
 
     fun loadAssignedPackages(username: String) {
         viewModelScope.launch {

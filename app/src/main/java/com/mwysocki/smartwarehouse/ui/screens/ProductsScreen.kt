@@ -159,11 +159,12 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
 
             if (showDialog) {
                 ProductAddDialog(
-                    onAddProduct = { productName, productDescription, productQuantity ->
+                    onAddProduct = { productName, productDescription, productQuantity, producerName ->
                         productsViewModel.addProductToFirestore(
                             productName,
                             productDescription,
                             productQuantity,
+                            producerName,
                             context
                         )
                     },
@@ -248,12 +249,14 @@ fun ProductItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(text = product.name)
-                Text(text = "Qty: ${product.quantity}")
+                Text(text = "${product.name} - ${product.producer}", style = MaterialTheme.typography.bodyLarge)
             }
+            Spacer(modifier = Modifier.weight(1f)) // This will push the quantity and checkbox to the end of the row
+            Text(text = "Qty: ${product.quantity}", style = MaterialTheme.typography.bodySmall)
             if (showCheckbox) {
                 Checkbox(
                     checked = isSelected,
@@ -265,12 +268,13 @@ fun ProductItem(
 }
 @Composable
 fun ProductAddDialog(
-    onAddProduct: (String, String, Int) -> Unit,
+    onAddProduct: (String, String, Int, String) -> Unit, // Add String for producer
     onDismiss: () -> Unit
 ) {
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
     var productQuantity by remember { mutableStateOf(0) }
+    var producerName by remember { mutableStateOf("") } // Add this line
 
     AlertDialog(
         title = { Text("Add New Product") },
@@ -291,6 +295,13 @@ fun ProductAddDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 TextField(
+                    value = producerName,
+                    onValueChange = { producerName = it },
+                    label = { Text("Producer Name") } // Add this TextField
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextField(
                     value = productQuantity.toString(),
                     onValueChange = { newValue ->
                         // Only update if the new value can be converted to an Int or is blank
@@ -303,7 +314,7 @@ fun ProductAddDialog(
         },
         confirmButton = {
             Button(onClick = {
-                onAddProduct(productName, productDescription, productQuantity)
+                onAddProduct(productName, productDescription, productQuantity, producerName) // Pass producerName
             }) {
                 Text("Add")
             }
@@ -334,10 +345,14 @@ fun ProductDetailDialog(
             ) {
                 Text(text = "ID: ${product.id}")
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = ": ${product.description}")
-                Spacer(modifier = Modifier.height(16.dp))
-                QRCodeImage(qrCodeBase64 = product.qrCode)
 
+                Text(text = "Descr: ${product.description}")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(text = "Producer: ${product.producer}")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                QRCodeImage(qrCodeBase64 = product.qrCode)
                 Spacer(modifier = Modifier.height(16.dp))  // Additional spacing before the buttons
 
                 Row(

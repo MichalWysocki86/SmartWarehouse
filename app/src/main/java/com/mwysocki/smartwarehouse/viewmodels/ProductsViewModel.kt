@@ -24,6 +24,7 @@ data class Product(
     val name: String = "",
     var quantity: Int = 0,
     val description: String = "",
+    val producer: String = "", // Add this line
     val qrCode: String = "",
     val addedBy: String = ""
 )
@@ -174,7 +175,7 @@ class ProductsViewModel : ViewModel() {
         return Base64.encodeToString(byteArray, Base64.DEFAULT)
     }
 
-    fun addProductToFirestore(productName: String, productDescription: String, productQuantity: Int, context: Context) {
+    fun addProductToFirestore(productName: String, productDescription: String, productQuantity: Int, producerName: String, context: Context) {
         viewModelScope.launch {
             try {
                 val loggedInUsername = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@launch
@@ -194,6 +195,7 @@ class ProductsViewModel : ViewModel() {
                     name = productName,
                     quantity = productQuantity,
                     description = productDescription,
+                    producer = producerName,
                     qrCode = qrCodeData,
                     addedBy = loggedInUsername
                 )

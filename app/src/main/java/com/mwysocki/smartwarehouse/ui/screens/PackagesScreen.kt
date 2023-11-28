@@ -116,6 +116,7 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>) {
         PackageDetailsDialog(pkg = pkg, packagesViewModel = packagesViewModel, onDismiss = { selectedPackage = null })
     }
 }
+
 @Composable
 fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onDismiss: () -> Unit) {
     // State to keep track of selected products
