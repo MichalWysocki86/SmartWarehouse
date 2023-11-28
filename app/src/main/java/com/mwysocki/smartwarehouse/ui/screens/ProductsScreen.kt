@@ -193,7 +193,12 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     ProductDetailDialog(
                         product = product,
                         onDismiss = productsViewModel::hideProductDetailDialog,
-                        onDelete = { productsViewModel.deleteProductFromFirestore(it) }
+                        onDelete = { productsViewModel.deleteProductFromFirestore(it) },
+                        onModify = { updatedProduct ->
+                            // Code to handle the product update
+                            productsViewModel.updateProductInFirestore(updatedProduct)
+                            productsViewModel.hideProductDetailDialog()
+                        }
                     )
                 }
             }
@@ -332,8 +337,25 @@ fun ProductAddDialog(
 fun ProductDetailDialog(
     product: Product,
     onDismiss: () -> Unit,
+    onModify: (Product) -> Unit,
     onDelete: (Product) -> Unit
 ) {
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        ProductEditDialog(
+            product = product,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { updatedProduct ->
+                onModify(updatedProduct)
+                showEditDialog = false
+            },
+            onDelete = {
+                onDelete(product)
+                showEditDialog = false
+            }
+        )
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Product Details") },
@@ -359,13 +381,8 @@ fun ProductDetailDialog(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(
-                        onClick = {
-                            onDelete(product)  // Call the provided delete handler
-                        },
-                        colors = ButtonDefaults.buttonColors(contentColorFor(backgroundColor = Color.Red))
-                    ) {
-                        Text("Delete")
+                    Button(onClick = { showEditDialog = true }) {
+                        Text("Modify")
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -379,6 +396,89 @@ fun ProductDetailDialog(
         confirmButton = {}
     )
 }
+
+@Composable
+fun ProductEditDialog(
+    product: Product,
+    onDismiss: () -> Unit,
+    onConfirm: (Product) -> Unit,
+    onDelete: () -> Unit
+) {
+    var name by remember { mutableStateOf(product.name) }
+    var description by remember { mutableStateOf(product.description) }
+    var quantity by remember { mutableStateOf(product.quantity.toString()) }
+    var producer by remember { mutableStateOf(product.producer) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Product") },
+        text = {
+            Column {
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") }
+                )
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") }
+                )
+                TextField(
+                    value = producer,
+                    onValueChange = { producer = it },
+                    label = { Text("Producer") }
+                )
+                TextField(
+                    value = quantity,
+                    onValueChange = { quantity= it },
+                    label = { Text("Quantity") }
+                )
+                // Repeat for description, quantity, and producer
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Save Changes and Cancel Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Button(onClick = {
+                        val updatedProduct = product.copy(
+                            name = name,
+                            description = description,
+                            quantity = quantity.toIntOrNull() ?: product.quantity,
+                            producer = producer
+                        )
+                        onConfirm(updatedProduct)
+                    }) {
+                        Text("Save Changes")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Delete Button
+                Button(
+                    onClick = onDelete,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(contentColorFor(backgroundColor = Color.Red))
+                ) {
+                    Text("Delete")
+                }
+            }
+        },
+        confirmButton = {}, // Empty as buttons are included in text
+        dismissButton = {}  // Empty as buttons are included in text
+    )
+}
+
 
 @Composable
 fun QuantityDialog(product: Product?, onQuantityConfirm: (Int) -> Unit, onDismiss: () -> Unit) {

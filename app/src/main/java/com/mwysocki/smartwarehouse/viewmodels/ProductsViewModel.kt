@@ -234,5 +234,18 @@ class ProductsViewModel : ViewModel() {
             }
         }
     }
+
+    fun updateProductInFirestore(updatedProduct: Product) {
+        viewModelScope.launch {
+            val productRef = FirebaseFirestore.getInstance().collection("Products").document(updatedProduct.id)
+            productRef.set(updatedProduct)
+                .addOnSuccessListener {
+                    fetchProducts() // Refresh the product list
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error updating product", e)
+                }
+        }
+    }
 }
 

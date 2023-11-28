@@ -20,6 +20,9 @@ class PackagesViewModel : ViewModel() {
 
     private val productsMap = mutableMapOf<String, String>()
 
+    // This map will now store the complete product information
+    private val productsInfoMap = mutableMapOf<String, Product>()
+
     init {
         fetchAllProducts()
         loadUnassignedPackages()
@@ -39,8 +42,10 @@ class PackagesViewModel : ViewModel() {
                 .addOnSuccessListener { result ->
                     val packages = result.mapNotNull { document ->
                         val pkg = document.toObject(Package::class.java)
+                        // Replace product ID with product name and producer in the products map
                         pkg?.products = pkg.products.mapKeys { entry ->
-                            productsMap[entry.key] ?: "Unknown Product"
+                            val productInfo = productsInfoMap[entry.key]
+                            "${productInfo?.name ?: "Unknown"} (${productInfo?.producer ?: "Unknown Producer"})"
                         }
                         pkg
                     }
@@ -52,12 +57,13 @@ class PackagesViewModel : ViewModel() {
 
     private fun fetchAllProducts() {
         viewModelScope.launch {
-            FirebaseFirestore.getInstance().collection("Products").get().addOnSuccessListener { result ->
-                for (document in result) {
-                    val product = document.toObject(Product::class.java)
-                    productsMap[product.id] = product.name
+            FirebaseFirestore.getInstance().collection("Products").get()
+                .addOnSuccessListener { result ->
+                    for (document in result) {
+                        val product = document.toObject(Product::class.java)
+                        productsInfoMap[product.id] = product
+                    }
                 }
-            }
         }
     }
 

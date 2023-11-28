@@ -1,10 +1,12 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -181,32 +183,37 @@ fun ProductCard(
         modifier = Modifier
             .padding(vertical = 4.dp)
             .fillMaxWidth()
-            .clickable(onClick = onProductClick), // Handle product selection
+            .clickable(onClick = onProductClick),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color.Green else MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (isSelected) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = "Selected",
-                    tint = Color.White
+            Column(modifier = Modifier.weight(1f)) {
+                if (isSelected) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = "Selected",
+                        tint = Color.White,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                Text(
+                    text = productName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.width(8.dp)) // Space between icon and text
             }
             Text(
-                text = productName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "Quantity: $quantity",
+                text = "Qty: $quantity",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
             )
