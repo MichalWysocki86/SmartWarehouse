@@ -2,6 +2,7 @@ package com.mwysocki.smartwarehouse.ui.screens
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mwysocki.smartwarehouse.activities.LoginActivity
+import com.mwysocki.smartwarehouse.activities.QRScanActivity
 import com.mwysocki.smartwarehouse.viewmodels.Package
 import com.mwysocki.smartwarehouse.viewmodels.PackagesViewModel
 import com.mwysocki.smartwarehouse.viewmodels.Product
@@ -102,6 +104,7 @@ fun PackageItem(pkg: Package, onPackageSelected: (Package) -> Unit) {
         }
     }
 }
+
 @Composable
 fun AssignedPackagesScreen(assignedPackages: List<Package>) {
 
@@ -139,6 +142,22 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
         }
     }
 
+    // Prepare launcher for QR scan activity
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val scannedQRCode = result.data?.getStringExtra("SCANNED_QR")
+            scannedQRCode?.let {
+                // Compare the scanned QR code with product QR code and update selected products
+                productsWithQuantity.forEach { (product, _) ->
+                    if (product.id == scannedQRCode) {
+                        Log.d("QRScanActivity", "Stuttu: $scannedQRCode")
+                        selectedProducts.add(product.id)
+                    }
+                }
+            }
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Package Details") },
@@ -150,10 +169,8 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
                         quantity = quantity,
                         isSelected = selectedProducts.contains(product.id),
                         onProductClick = {
-                            if (selectedProducts.contains(product.id)) {
-                                selectedProducts.remove(product.id)
-                            } else {
-                                selectedProducts.add(product.id)
+                            if (!selectedProducts.contains(product.id)) {
+                                launcher.launch(Intent(context, QRScanActivity::class.java))
                             }
                         }
                     )
@@ -183,6 +200,7 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
         }
     )
 }
+
 @Composable
 fun ProductCard(
     product: Product,
@@ -208,15 +226,6 @@ fun ProductCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                if (isSelected) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = "Selected",
-                        tint = Color.White,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
                 Text(
                     text = product.name,
                     style = MaterialTheme.typography.bodyLarge,
@@ -228,11 +237,23 @@ fun ProductCard(
                     color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                 )
             }
-            Text(
-                text = "Qty: $quantity",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Qty: $quantity",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                )
+                if (isSelected) {
+                    Spacer(modifier = Modifier.width(8.dp))  // Space between quantity and checkmark
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = "Selected",
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 }

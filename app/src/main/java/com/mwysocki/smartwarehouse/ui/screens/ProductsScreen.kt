@@ -48,6 +48,7 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     var currentSelectedProduct by remember { mutableStateOf<Product?>(null) }
     var currentQuantity by remember { mutableStateOf(0) }
 
+
     var createPackageMode by remember { mutableStateOf(false) }
     val selectedProductQuantities = remember { mutableMapOf<String, Int>() }
     var showPackageSummaryDialog by remember { mutableStateOf(false) }
@@ -193,11 +194,15 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     ProductDetailDialog(
                         product = product,
                         onDismiss = productsViewModel::hideProductDetailDialog,
-                        onDelete = { productsViewModel.deleteProductFromFirestore(it) },
                         onModify = { updatedProduct ->
                             // Code to handle the product update
                             productsViewModel.updateProductInFirestore(updatedProduct)
                             productsViewModel.hideProductDetailDialog()
+                        },
+                        onDelete = {
+                            productsViewModel.deleteProductFromFirestore(it)
+                            productsViewModel.hideProductDetailDialog() // Close the dialog
+                            productsViewModel.fetchProducts() // Refresh the products list
                         }
                     )
                 }
@@ -278,6 +283,7 @@ fun ProductItem(
         }
     }
 }
+
 @Composable
 fun ProductAddDialog(
     onAddProduct: (String, String, Int, String) -> Unit, // Add String for producer

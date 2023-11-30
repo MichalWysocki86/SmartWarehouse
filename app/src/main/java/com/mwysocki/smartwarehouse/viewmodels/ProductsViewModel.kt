@@ -64,6 +64,7 @@ class ProductsViewModel : ViewModel() {
     val showProductDetailDialog: StateFlow<Boolean> = _showProductDetailDialog.asStateFlow()
 
 
+
     // Function to create and save a package to Firestore
     fun createAndSavePackage(context: Context, selectedProducts: Map<String, Int>) {
         viewModelScope.launch {
@@ -121,7 +122,7 @@ class ProductsViewModel : ViewModel() {
         filterProducts()
     }
 
-    private fun fetchProducts() {
+    fun fetchProducts() {
         viewModelScope.launch {
             try {
                 val productList = mutableListOf<Product>()
@@ -179,17 +180,10 @@ class ProductsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val loggedInUsername = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@launch
-                // Get a new document reference with an auto-generated ID
-                val newProductRef =
-                    FirebaseFirestore.getInstance().collection("Products").document()
-
-                // Retrieve the unique product ID
+                val newProductRef = FirebaseFirestore.getInstance().collection("Products").document()
                 val uniqueProductId = newProductRef.id
+                val qrCodeData = generateQRCode(uniqueProductId)
 
-                // Generate QR code with product's name and ID
-                val qrCodeData = generateQRCode("$productName:$uniqueProductId")
-
-                // Create the product with the unique ID, name, description, and QR code data
                 val newProduct = Product(
                     id = uniqueProductId,
                     name = productName,
@@ -200,17 +194,20 @@ class ProductsViewModel : ViewModel() {
                     addedBy = loggedInUsername
                 )
 
-                // Save the product to Firestore
+                Log.d("ProductsViewModel", "Adding new product: $productName")
+
                 newProductRef.set(newProduct)
                     .addOnSuccessListener {
-                        hideAddProductDialog()
-                        fetchProducts()
+                        Log.d("ProductsViewModel", "Product added successfully: $productName")
+                        hideAddProductDialog() // Close the dialog after successful addition
+                        fetchProducts() // Refresh the products list
                     }
                     .addOnFailureListener { exception ->
-                        _productsState.value =
-                            ProductsState(errorMessage = exception.localizedMessage)
+                        Log.e("ProductsViewModel", "Error adding product: ${exception.localizedMessage}")
+                        _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
                     }
             } catch (e: Exception) {
+                Log.e("ProductsViewModel", "Exception in adding product: ${e.localizedMessage}")
                 _productsState.value = ProductsState(errorMessage = e.localizedMessage)
             }
         }
@@ -223,8 +220,8 @@ class ProductsViewModel : ViewModel() {
                     .document(product.id)
                     .delete()
                     .addOnSuccessListener {
+                        fetchProducts() // Refresh the products list after deletion
                         hideProductDetailDialog()
-                        fetchProducts()
                     }
                     .addOnFailureListener { exception ->
                         _productsState.value = ProductsState(errorMessage = exception.localizedMessage)
