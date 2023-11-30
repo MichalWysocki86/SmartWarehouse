@@ -20,8 +20,11 @@ class PackagesViewModel : ViewModel() {
 
     private val productsMap = mutableMapOf<String, String>()
 
+    // Map to store Product details along with their ordered quantity in a package
+    private val productsInPackage = mutableMapOf<Product, Int>()
+
     // This map will now store the complete product information
-    private val productsInfoMap = mutableMapOf<String, Product>()
+    val productsInfoMap = mutableMapOf<String, Product>()
 
     init {
         fetchAllProducts()
@@ -42,14 +45,29 @@ class PackagesViewModel : ViewModel() {
                 .addOnSuccessListener { result ->
                     val packages = result.mapNotNull { document ->
                         val pkg = document.toObject(Package::class.java)
-                        // Replace product ID with product name and producer in the products map
-                        pkg?.products = pkg.products.mapKeys { entry ->
-                            val productInfo = productsInfoMap[entry.key]
-                            "${productInfo?.name ?: "Unknown"} (${productInfo?.producer ?: "Unknown Producer"})"
+                        pkg?.let {
+                            updateProductsInPackage(it)
                         }
                         pkg
                     }
                     _assignedPackages.value = packages
+                }
+        }
+    }
+
+    // Function to update the productsInPackage map
+    private fun updateProductsInPackage(pkg: Package) {
+        pkg.products.forEach { (productId, orderedQuantity) ->
+            FirebaseFirestore.getInstance().collection("Products").document(productId)
+                .get()
+                .addOnSuccessListener { documentSnapshot ->
+                    val product = documentSnapshot.toObject(Product::class.java)
+                    product?.let {
+                        productsInPackage[it] = orderedQuantity
+                    }
+                }
+                .addOnFailureListener {
+                    Log.e("PackagesViewModel", "Error fetching product details", it)
                 }
         }
     }

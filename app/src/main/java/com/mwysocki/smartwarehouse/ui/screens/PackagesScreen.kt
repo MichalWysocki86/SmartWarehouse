@@ -1,5 +1,10 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import com.mwysocki.smartwarehouse.viewmodels.Package
 import com.mwysocki.smartwarehouse.viewmodels.PackagesViewModel
+import com.mwysocki.smartwarehouse.viewmodels.Product
 
 
 @Composable
@@ -122,27 +128,32 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>) {
 @Composable
 fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onDismiss: () -> Unit) {
     // State to keep track of selected products
+    val context = LocalContext.current // Retrieve the context
     val selectedProducts = remember { mutableStateListOf<String>() }
     val allProductsSelected = selectedProducts.size == pkg.products.size
-    val context = LocalContext.current // Retrieve the context
+
+    // Prepare a list of Pair<Product, Int> for each product in the package
+    val productsWithQuantity = pkg.products.mapNotNull { (productId, quantity) ->
+        packagesViewModel.productsInfoMap[productId]?.let { product ->
+            product to quantity
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Package Details") },
         text = {
             LazyColumn {
-                items(pkg.products.toList(), key = { it.first }) { (productId, quantity) ->
-                    // Pass the productId and selection state to ProductCard
+                items(productsWithQuantity, key = { it.first.id }) { (product, quantity) ->
                     ProductCard(
-                        productName = productId,
+                        product = product,
                         quantity = quantity,
-                        isSelected = selectedProducts.contains(productId),
+                        isSelected = selectedProducts.contains(product.id),
                         onProductClick = {
-                            // Update the selection state when a product card is clicked
-                            if (selectedProducts.contains(productId)) {
-                                selectedProducts.remove(productId)
+                            if (selectedProducts.contains(product.id)) {
+                                selectedProducts.remove(product.id)
                             } else {
-                                selectedProducts.add(productId)
+                                selectedProducts.add(product.id)
                             }
                         }
                     )
@@ -174,7 +185,7 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
 }
 @Composable
 fun ProductCard(
-    productName: String,
+    product: Product,
     quantity: Int,
     isSelected: Boolean,
     onProductClick: () -> Unit
@@ -207,8 +218,13 @@ fun ProductCard(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
                 Text(
-                    text = productName,
+                    text = product.name,
                     style = MaterialTheme.typography.bodyLarge,
+                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = product.producer,
+                    style = MaterialTheme.typography.bodySmall,
                     color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                 )
             }

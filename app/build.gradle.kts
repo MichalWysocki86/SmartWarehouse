@@ -68,8 +68,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.5.3")
     implementation("androidx.compose.material3:material3:1.2.0-alpha09")
     implementation("com.google.firebase:firebase-firestore:24.9.0")
-    implementation("com.google.zxing:core:3.5.2")
-    implementation("com.google.zxing:android-core:3.3.0")
+    //implementation("com.google.zxing:core:3.5.2")
+    //implementation("com.google.zxing:android-core:3.3.0")
     implementation("io.coil-kt:coil-compose:1.3.2")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -81,7 +81,6 @@ dependencies {
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1")
-    implementation("com.google.mlkit:barcode-scanning:17.0.3")
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     
     implementation ("androidx.camera:camera-core:1.0.2")
@@ -89,7 +88,7 @@ dependencies {
     implementation ("androidx.camera:camera-lifecycle:1.0.2")
     implementation ("androidx.camera:camera-view:1.0.0-alpha29")
 
-
+    implementation ("com.journeyapps:zxing-android-embedded:4.1.0")
 
 
 

@@ -258,7 +258,14 @@ fun ProductItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(text = "${product.name} - ${product.producer}", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = product.name,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = product.producer,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             Spacer(modifier = Modifier.weight(1f)) // This will push the quantity and checkbox to the end of the row
             Text(text = "Qty: ${product.quantity}", style = MaterialTheme.typography.bodySmall)
