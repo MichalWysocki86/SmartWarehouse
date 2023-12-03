@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,9 +34,17 @@ fun LoginScreen() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        OutlinedTextField(
+        Text(
+            text = "Smart Warehouse",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        TextField(
             value = username,
             onValueChange = { username = it },
             label = { Text("Username") },
@@ -44,7 +53,7 @@ fun LoginScreen() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
+        TextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
@@ -53,6 +62,7 @@ fun LoginScreen() {
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
 
         val context = LocalContext.current
         Button(onClick = {
@@ -63,7 +73,9 @@ fun LoginScreen() {
             Text("Login")
         }
 
-        Text(text = error, color = Color.Red)
+        if (error.isNotEmpty()) {
+            Text(text = error, color = Color.Red)
+        }
     }
 }
 

@@ -126,7 +126,9 @@ class ProductsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val productList = mutableListOf<Product>()
-                FirebaseFirestore.getInstance().collection("Products").get()
+                FirebaseFirestore.getInstance().collection("Products")
+                    .orderBy("name")
+                    .get()
                     .addOnSuccessListener { result ->
                         for (document in result) {
                             val product = document.toObject(Product::class.java)
@@ -148,7 +150,9 @@ class ProductsViewModel : ViewModel() {
     private fun filterProducts() {
         val filteredList = _productsState.value.allProducts.filter {
             it.name.contains(_searchQuery.value, ignoreCase = true) ||
-                    it.description.contains(_searchQuery.value, ignoreCase = true)
+                    it.producer.contains(_searchQuery.value, ignoreCase = true) ||
+                            it.id.contains(_searchQuery.value, ignoreCase = true)
+
         }
         _productsState.value = _productsState.value.copy(filteredProducts = filteredList)
     }
