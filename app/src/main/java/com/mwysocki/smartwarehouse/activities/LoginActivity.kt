@@ -9,8 +9,11 @@ import com.mwysocki.smartwarehouse.ui.screens.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 
 data class User(
+    val id: String = "",
     val username: String = "",
-    val password: String = "" // add hashing??
+    var password: String = "",
+    var firstLogin: Boolean = true,
+    var profilePictureUrl: String? = null
 )
 
 class LoginActivity : ComponentActivity() {
@@ -35,6 +38,12 @@ class LoginActivity : ComponentActivity() {
         finish()
     }
 
+    private fun navigateToResetPasswordActivity() {
+        val intent = Intent(this, ResetPasswordActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+
     // Inner class for Login related functions
     object LoginManager {
         fun loginUser(context: Context, username: String, password: String, onError: (String) -> Unit) {
@@ -51,7 +60,11 @@ class LoginActivity : ComponentActivity() {
                         if (user != null && user.password == password) {
                             setLoggedIn(context, true)
                             UserPrefs.setLoggedInUsername(context, username)
-                            if (context is LoginActivity) {
+                            UserPrefs.setLoggedInUserId(context, user.id)
+
+                            if (user.firstLogin && context is LoginActivity) {
+                                context.navigateToResetPasswordActivity() // Redirect to ResetPasswordActivity
+                            } else if (context is LoginActivity) {
                                 context.navigateToMainActivity()
                             }
                         } else {
@@ -91,6 +104,19 @@ class LoginActivity : ComponentActivity() {
                 putString("loggedInUsername", username)
                 apply()
             }
+        }
+
+        fun setLoggedInUserId(context: Context, userId: String) {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putString("loggedInUserId", userId)
+                apply()
+            }
+        }
+
+        fun getLoggedInUserId(context: Context): String? {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            return sharedPref.getString("loggedInUserId", null)
         }
     }
 }

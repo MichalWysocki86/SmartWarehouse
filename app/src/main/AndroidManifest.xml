@@ -28,7 +28,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".activities.MainActivity" />
-        <activity android:name=".activities.QRScanActivity"/>
+        <activity android:name=".activities.QRScanActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".activities.ResetPasswordActivity" />
     </application>
 
 </manifest>
