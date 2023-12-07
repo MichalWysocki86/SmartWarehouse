@@ -89,7 +89,8 @@ dependencies {
     implementation ("androidx.camera:camera-view:1.0.0-alpha29")
 
     implementation ("com.journeyapps:zxing-android-embedded:4.1.0")
-
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation ("androidx.compose.runtime:runtime-livedata:1.5.4")
 
 
     // TODO: Add the dependencies for Firebase products you want to use

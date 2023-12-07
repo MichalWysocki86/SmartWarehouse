@@ -1,6 +1,7 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -62,6 +63,8 @@ import com.mwysocki.smartwarehouse.activities.NavigationItem
 import com.mwysocki.smartwarehouse.ui.theme.SmartWarehouseTheme
 import com.mwysocki.smartwarehouse.viewmodels.MainViewModel
 import com.mwysocki.smartwarehouse.viewmodels.PackagesViewModel
+import com.mwysocki.smartwarehouse.viewmodels.ProfileViewModel
+import com.mwysocki.smartwarehouse.viewmodels.SharedViewModel
 import kotlinx.coroutines.launch
 
 enum class MainScreen(@StringRes val title: Int) {
@@ -86,7 +89,10 @@ fun MainApp(
     )
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val packagesViewModel: PackagesViewModel = viewModel()
+    val sharedViewModel: SharedViewModel = viewModel()
 
+    val context = LocalContext.current
     NavigationDrawer(
         drawerState = drawerState,
         navController = navController,
@@ -111,24 +117,18 @@ fun MainApp(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable(route = MainScreen.Home.name) {
-
-                    val context = LocalContext.current
                     val username = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@composable
-                    val packagesViewModel: PackagesViewModel = viewModel()
-
                     // This will load the packages assigned to the logged-in user
                     packagesViewModel.loadAssignedPackages(username)
+
+                    //TODO change this code to look like under
 
                     // Now you can use the assignedPackages StateFlow to collect and display the packages
                     val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
                     AssignedPackagesScreen(assignedPackages)
                 }
                 composable(route = MainScreen.Profile.name) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Red)
-                            .fillMaxSize()
-                    )
+                    ProfileScreen(sharedViewModel)
                 }
                 composable(route = MainScreen.Products.name) {
                     ProductsScreen()

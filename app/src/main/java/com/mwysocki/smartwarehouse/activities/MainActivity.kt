@@ -21,7 +21,6 @@ data class NavigationItem(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val userEmail = intent.getStringExtra("userEmail") ?: "User"
         setContent {
             MainApp(logoutUser = ::logoutUser)
         }

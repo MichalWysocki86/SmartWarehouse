@@ -13,7 +13,10 @@ data class User(
     val username: String = "",
     var password: String = "",
     var firstLogin: Boolean = true,
-    var profilePictureUrl: String? = null
+    var profilePictureUrl: String? = null,
+    var email: String = "",
+    var firstname: String = "",
+    var lastname: String = ""
 )
 
 class LoginActivity : ComponentActivity() {
