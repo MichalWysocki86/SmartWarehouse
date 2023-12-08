@@ -2,6 +2,7 @@ package com.mwysocki.smartwarehouse.ui.screens
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -119,6 +120,7 @@ fun MainApp(
                 composable(route = MainScreen.Home.name) {
                     val username = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@composable
                     // This will load the packages assigned to the logged-in user
+                    Log.d("TTTT","$username")
                     packagesViewModel.loadAssignedPackages(username)
 
                     //TODO change this code to look like under

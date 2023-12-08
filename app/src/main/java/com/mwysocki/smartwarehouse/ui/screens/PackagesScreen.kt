@@ -111,7 +111,7 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>) {
     // Obtain PackagesViewModel instance
     val packagesViewModel: PackagesViewModel = viewModel()
     // Get the list of assigned packages from the ViewModel
-    val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
+    //val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
     var selectedPackage by remember { mutableStateOf<Package?>(null) }
 
     LazyColumn {

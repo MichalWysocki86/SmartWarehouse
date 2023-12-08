@@ -1,6 +1,9 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
+import android.net.Uri
 import android.os.CountDownTimer
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +17,7 @@ import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
 import com.mwysocki.smartwarehouse.viewmodels.ProfileViewModel
 import com.mwysocki.smartwarehouse.viewmodels.ProfileViewModelFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +36,7 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.asImageBitmap
+import coil.transform.CircleCropTransformation
 import com.mwysocki.smartwarehouse.viewmodels.SharedViewModel
 
 @OptIn(ExperimentalCoilApi::class)
@@ -53,6 +58,14 @@ fun ProfileScreen(sharedViewModel: SharedViewModel) {
         // You can perform actions here if needed, but its main purpose is to trigger recomposition
     }
 
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            profileViewModel.uploadImageToFirebaseStorage(it, context)
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
@@ -64,14 +77,25 @@ fun ProfileScreen(sharedViewModel: SharedViewModel) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Profile Picture",
-                    modifier = Modifier.size(256.dp)
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(CircleShape)
+                        .clickable { launcher.launch("image/*") }
                 )
             } else {
                 // Load the profile picture from the URL
                 Image(
-                    painter = rememberImagePainter(user.profilePictureUrl),
+                    painter = rememberImagePainter(
+                        data = user.profilePictureUrl,
+                        builder = {
+                            transformations(CircleCropTransformation())
+                        }
+                    ),
                     contentDescription = "Profile Picture",
-                    modifier = Modifier.size(200.dp).clip(CircleShape) // Clip as a circle
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(CircleShape)
+                        .clickable { launcher.launch("image/*") }
                 )
             }
 
@@ -100,6 +124,7 @@ fun ProfileScreen(sharedViewModel: SharedViewModel) {
 
         }
     }
+
 }
 
 @Composable

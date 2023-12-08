@@ -1,5 +1,7 @@
 package com.mwysocki.smartwarehouse.viewmodels
 
+import android.content.Context
+import android.net.Uri
 import android.os.CountDownTimer
 import android.util.Log
 import androidx.compose.runtime.State
@@ -10,12 +12,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.mwysocki.smartwarehouse.activities.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class ProfileViewModel(userId: String) : ViewModel() {
+class ProfileViewModel(private val userId: String) : ViewModel() {
     private val _userProfile = MutableStateFlow<User?>(null)
     val userProfile: StateFlow<User?> = _userProfile.asStateFlow()
 
@@ -44,6 +47,31 @@ class ProfileViewModel(userId: String) : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         timer?.cancel()
+    }
+
+    fun uploadImageToFirebaseStorage(imageUri: Uri, context: Context) {
+        val storageRef = FirebaseStorage.getInstance().reference.child("profilePictures/$userId.jpg")
+        val uploadTask = storageRef.putFile(imageUri)
+
+        uploadTask.addOnSuccessListener {
+            storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                updateProfilePictureUrl(downloadUri.toString())
+            }
+        }.addOnFailureListener {
+            // Handle failure
+        }
+    }
+
+    private fun updateProfilePictureUrl(downloadUrl: String) {
+        FirebaseFirestore.getInstance().collection("Users")
+            .document(userId)
+            .update("profilePictureUrl", downloadUrl)
+            .addOnSuccessListener {
+                _userProfile.value = _userProfile.value?.copy(profilePictureUrl = downloadUrl)
+            }
+            .addOnFailureListener {
+                // Handle failure
+            }
     }
 }
 

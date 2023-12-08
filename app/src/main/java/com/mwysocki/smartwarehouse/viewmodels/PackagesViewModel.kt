@@ -49,9 +49,11 @@ class PackagesViewModel : ViewModel() {
                         pkg?.let {
                             updateProductsInPackage(it)
                         }
+                        Log.d("PackagesViewModel", "Loaded package: $pkg")
                         pkg
                     }
                     _assignedPackages.value = packages
+                    Log.d("PackagesViewModel", "Assigned packages updated: $packages")
                 }
         }
     }
