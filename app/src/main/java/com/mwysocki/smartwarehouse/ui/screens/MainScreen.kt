@@ -11,14 +11,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Warehouse
+import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material.icons.outlined.Person
@@ -224,8 +224,8 @@ fun NavigationDrawer(
             ),
             NavigationItem(
                 title = "Logout",
-                selectedIcon = Icons.AutoMirrored.Filled.ExitToApp,
-                unselectedIcon = Icons.AutoMirrored.Outlined.ExitToApp,
+                selectedIcon = Icons.Filled.ExitToApp,
+                unselectedIcon = Icons.Outlined.ExitToApp,
                 route = MainScreen.Logout
             ),
         )

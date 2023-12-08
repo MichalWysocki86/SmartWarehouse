@@ -31,8 +31,12 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import java.io.ByteArrayInputStream
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import com.mwysocki.smartwarehouse.viewmodels.ProductsState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
 
 val LightBlue = Color(0xFFADD8E6)  // Define LightBlue color
 @Composable
@@ -40,6 +44,7 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val productsState by productsViewModel.productsState.collectAsState()
     val searchQuery by productsViewModel.searchQuery.collectAsState()
     val showDialog by productsViewModel.showAddProductDialog.collectAsState()
+    val filterType by productsViewModel.filterType.collectAsState()
 
     val selectedProduct by productsViewModel.selectedProduct.collectAsState()
     val showProductDetailDialog by productsViewModel.showProductDetailDialog.collectAsState()
@@ -90,29 +95,35 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                FilterDropdownMenu(productsViewModel = productsViewModel)
+
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { productsViewModel.setSearchQuery(it) },
                     label = { Text("Search") },
                     modifier = Modifier.weight(1f)
                 )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Button(
-                    onClick = { productsViewModel.showAddProductDialog() },
-                    modifier = Modifier.defaultMinSize(minWidth = 56.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Product")
-                }
             }
-
-            Text(
-                text = "Total products: ${productsState.allProducts.size}",
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-            )
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Total products: ${productsState.allProducts.size}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Button(
+                    onClick = { productsViewModel.showAddProductDialog() }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Product")
+                    Text("Add Product")
+                }
+            }
 
             if (productsState.errorMessage != null) {
                 Text(
@@ -206,6 +217,39 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun FilterDropdownMenu(productsViewModel: ProductsViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    val filterType by productsViewModel.filterType.collectAsState()
+    val filterOptions = listOf("Name", "Producer", "ID")
+
+    Box(modifier = Modifier.padding(end = 8.dp)) { // Add padding to the end of the Box
+        Text(
+            text = filterType,
+            modifier = Modifier
+                .clickable { expanded = true }
+                .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(50)) // Round shape and blue background
+                .padding(horizontal = 16.dp, vertical = 8.dp) // Padding around text
+                , // White text
+            color = MaterialTheme.colorScheme.onPrimary // White text color
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            filterOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, color = MaterialTheme.colorScheme.onSurface) },
+                    onClick = {
+                        productsViewModel.setFilterType(option)
+                        expanded = false
+                    }
+                )
             }
         }
     }

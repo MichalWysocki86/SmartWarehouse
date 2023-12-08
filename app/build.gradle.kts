@@ -66,7 +66,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation("androidx.compose.foundation:foundation:1.5.3")
     implementation("androidx.compose.material:material-icons-extended:1.5.3")
-    implementation("androidx.compose.material3:material3:1.2.0-alpha09")
     implementation("com.google.firebase:firebase-firestore:24.9.0")
     //implementation("com.google.zxing:core:3.5.2")
     //implementation("com.google.zxing:android-core:3.3.0")
@@ -92,7 +91,7 @@ dependencies {
     implementation ("com.journeyapps:zxing-android-embedded:4.1.0")
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation ("androidx.compose.runtime:runtime-livedata:1.5.4")
-
+    implementation("androidx.compose.material:material:1.5.4")
 
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies

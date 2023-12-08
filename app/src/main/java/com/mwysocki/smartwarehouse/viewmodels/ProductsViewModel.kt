@@ -63,7 +63,8 @@ class ProductsViewModel : ViewModel() {
     private val _showProductDetailDialog = MutableStateFlow(false)
     val showProductDetailDialog: StateFlow<Boolean> = _showProductDetailDialog.asStateFlow()
 
-
+    private val _filterType = MutableStateFlow("Name")
+    val filterType: StateFlow<String> = _filterType.asStateFlow()
 
     // Function to create and save a package to Firestore
     fun createAndSavePackage(context: Context, selectedProducts: Map<String, Int>) {
@@ -147,12 +148,19 @@ class ProductsViewModel : ViewModel() {
         }
     }
 
+    fun setFilterType(type: String) {
+        _filterType.value = type
+        filterProducts()
+    }
+
     private fun filterProducts() {
         val filteredList = _productsState.value.allProducts.filter {
-            it.name.contains(_searchQuery.value, ignoreCase = true) ||
-                    it.producer.contains(_searchQuery.value, ignoreCase = true) ||
-                            it.id.contains(_searchQuery.value, ignoreCase = true)
-
+            when (_filterType.value) {
+                "Name" -> it.name.contains(_searchQuery.value, ignoreCase = true)
+                "Producer" -> it.producer.contains(_searchQuery.value, ignoreCase = true)
+                "ID" -> it.id.contains(_searchQuery.value, ignoreCase = true)
+                else -> false
+            }
         }
         _productsState.value = _productsState.value.copy(filteredProducts = filteredList)
     }
