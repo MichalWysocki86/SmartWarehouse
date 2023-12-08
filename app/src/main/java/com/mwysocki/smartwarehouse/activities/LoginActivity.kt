@@ -79,7 +79,6 @@ class LoginActivity : ComponentActivity() {
                     onError(exception.message ?: "Unknown error")
                 }
         }
-
         fun setLoggedIn(context: Context, loggedIn: Boolean) {
             val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
             with(sharedPref.edit()) {

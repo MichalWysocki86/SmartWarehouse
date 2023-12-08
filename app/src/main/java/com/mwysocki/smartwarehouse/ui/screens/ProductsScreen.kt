@@ -31,12 +31,15 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import java.io.ByteArrayInputStream
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.MaterialTheme
 import com.mwysocki.smartwarehouse.viewmodels.ProductsState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
+import androidx.compose.runtime.derivedStateOf
 
 val LightBlue = Color(0xFFADD8E6)  // Define LightBlue color
 @Composable
@@ -58,6 +61,19 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val selectedProductQuantities = remember { mutableMapOf<String, Int>() }
     var showPackageSummaryDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    val filteredProducts by remember(searchQuery, filterType) {
+        derivedStateOf {
+            productsState.allProducts.filter {
+                when (filterType) {
+                    "Name" -> it.name.contains(searchQuery, ignoreCase = true)
+                    "Producer" -> it.producer.contains(searchQuery, ignoreCase = true)
+                    "ID" -> it.id.contains(searchQuery, ignoreCase = true)
+                    else -> false
+                }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -92,17 +108,16 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterDropdownMenu(productsViewModel = productsViewModel)
-
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { productsViewModel.setSearchQuery(it) },
-                    label = { Text("Search") },
+                    label = { Text("Search ${productsViewModel.filterType.collectAsState().value}") },
                     modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.width(16.dp))
+                FilterDropdownMenu(productsViewModel = productsViewModel)
             }
             Row(
                 modifier = Modifier
@@ -135,7 +150,7 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                 )
             } else {
                 LazyColumn {
-                    items(productsState.filteredProducts) { product ->
+                    items(filteredProducts) { product ->
                         ProductItem(
                             product = product,
                             isSelected = selectedProductQuantities.containsKey(product.id),
@@ -228,23 +243,30 @@ fun FilterDropdownMenu(productsViewModel: ProductsViewModel) {
     val filterType by productsViewModel.filterType.collectAsState()
     val filterOptions = listOf("Name", "Producer", "ID")
 
-    Box(modifier = Modifier.padding(end = 8.dp)) { // Add padding to the end of the Box
-        Text(
-            text = filterType,
+    Box(modifier = Modifier.padding(end = 8.dp)) {
+        IconButton(
+            onClick = { expanded = true },
             modifier = Modifier
-                .clickable { expanded = true }
-                .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(50)) // Round shape and blue background
-                .padding(horizontal = 16.dp, vertical = 8.dp) // Padding around text
-                , // White text
-            color = MaterialTheme.colorScheme.onPrimary // White text color
-        )
+                .size(36.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = CircleShape
+                )
+                .padding(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Filter Options",
+                tint = Color.White // White arrow icon
+            )
+        }
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
             filterOptions.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option, color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(option) },
                     onClick = {
                         productsViewModel.setFilterType(option)
                         expanded = false

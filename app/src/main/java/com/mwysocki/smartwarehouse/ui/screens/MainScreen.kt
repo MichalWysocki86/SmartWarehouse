@@ -17,11 +17,13 @@ import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Warehouse
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,10 +63,12 @@ import androidx.navigation.compose.rememberNavController
 import com.mwysocki.smartwarehouse.R
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import com.mwysocki.smartwarehouse.activities.NavigationItem
+import com.mwysocki.smartwarehouse.activities.ResetPasswordActivity
 import com.mwysocki.smartwarehouse.ui.theme.SmartWarehouseTheme
 import com.mwysocki.smartwarehouse.viewmodels.MainViewModel
 import com.mwysocki.smartwarehouse.viewmodels.PackagesViewModel
 import com.mwysocki.smartwarehouse.viewmodels.ProfileViewModel
+import com.mwysocki.smartwarehouse.viewmodels.SettingsViewModel
 import com.mwysocki.smartwarehouse.viewmodels.SharedViewModel
 import kotlinx.coroutines.launch
 
@@ -73,6 +77,7 @@ enum class MainScreen(@StringRes val title: Int) {
     Profile(R.string.profile),
     Products(R.string.products),
     Packages(R.string.packages),
+    Settings(R.string.settings),
     Logout(R.string.logout)
 }
 
@@ -92,6 +97,7 @@ fun MainApp(
     val scope = rememberCoroutineScope()
     val packagesViewModel: PackagesViewModel = viewModel()
     val sharedViewModel: SharedViewModel = viewModel()
+    val settingsViewModel: SettingsViewModel = viewModel()
 
     val context = LocalContext.current
     NavigationDrawer(
@@ -137,6 +143,12 @@ fun MainApp(
                 }
                 composable(route = MainScreen.Packages.name) {
                     PackagesScreen()
+                }
+                composable(route = MainScreen.Settings.name) {
+                    SettingsScreen(settingsViewModel = settingsViewModel, onChangePasswordClicked = {
+                        val intent = Intent(context, ResetPasswordActivity::class.java)
+                        context.startActivity(intent)
+                    })
                 }
 
 
@@ -221,6 +233,12 @@ fun NavigationDrawer(
                 selectedIcon = Icons.Filled.LocalShipping,
                 unselectedIcon = Icons.Outlined.LocalShipping,
                 route = MainScreen.Packages
+            ),
+            NavigationItem(
+                title = stringResource(id = R.string.settings),
+                selectedIcon = Icons.Filled.Settings,
+                unselectedIcon = Icons.Outlined.Settings,
+                route = MainScreen.Settings
             ),
             NavigationItem(
                 title = "Logout",

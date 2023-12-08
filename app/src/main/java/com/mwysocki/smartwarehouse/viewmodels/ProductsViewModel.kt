@@ -150,17 +150,16 @@ class ProductsViewModel : ViewModel() {
 
     fun setFilterType(type: String) {
         _filterType.value = type
-        filterProducts()
+        filterProducts() // Call filterProducts whenever the filter type changes
     }
 
     private fun filterProducts() {
-        val filteredList = _productsState.value.allProducts.filter {
-            when (_filterType.value) {
-                "Name" -> it.name.contains(_searchQuery.value, ignoreCase = true)
-                "Producer" -> it.producer.contains(_searchQuery.value, ignoreCase = true)
-                "ID" -> it.id.contains(_searchQuery.value, ignoreCase = true)
-                else -> false
-            }
+        val query = _searchQuery.value
+        val filteredList = when (_filterType.value) {
+            "Name" -> _productsState.value.allProducts.filter { it.name.contains(query, ignoreCase = true) }
+            "Producer" -> _productsState.value.allProducts.filter { it.producer.contains(query, ignoreCase = true) }
+            "ID" -> _productsState.value.allProducts.filter { it.id.contains(query, ignoreCase = true) }
+            else -> _productsState.value.allProducts
         }
         _productsState.value = _productsState.value.copy(filteredProducts = filteredList)
     }

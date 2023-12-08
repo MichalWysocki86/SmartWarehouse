@@ -5,4 +5,5 @@
     <string name="products">Products</string>
     <string name="logout">Logout</string>
     <string name="packages">Packages</string>
+    <string name="settings">Settings</string>
 </resources>
