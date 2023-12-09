@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import com.mwysocki.smartwarehouse.activities.User
+import java.security.MessageDigest
 
 class ResetPasswordViewModel : ViewModel() {
     private val _message = MutableLiveData<String>()
@@ -16,21 +17,33 @@ class ResetPasswordViewModel : ViewModel() {
             .addOnSuccessListener { documents ->
                 if (documents.isEmpty) {
                     onError("User not found")
-                    Log.d("ResetPasswordViewModel", "User not found for username: $username")
                 } else {
                     val user = documents.first().toObject(User::class.java)
-                    if (user.password == oldPassword) {
-                        onSuccess()
-                        Log.d("ResetPasswordViewModel", "Old password verified for username: $username")
+                    if (user != null) {
+                        // Check if it's the first login (password not hashed) or subsequent login (password hashed)
+                        if (user.firstLogin) {
+                            // For first login, compare the passwords directly
+                            if (user.password == oldPassword) {
+                                onSuccess()
+                            } else {
+                                onError("Old password is incorrect")
+                            }
+                        } else {
+                            // For subsequent logins, hash the old password before comparing
+                            val hashedOldPassword = hashPassword(oldPassword)
+                            if (user.password == hashedOldPassword) {
+                                onSuccess()
+                            } else {
+                                onError("Old password is incorrect")
+                            }
+                        }
                     } else {
-                        onError("Old password is incorrect")
-                        Log.d("ResetPasswordViewModel", "Old password is incorrect for username: $username")
+                        onError("Invalid user data")
                     }
                 }
             }
             .addOnFailureListener { e ->
                 onError(e.localizedMessage ?: "Unknown error occurred")
-                Log.e("ResetPasswordViewModel", "Error verifying old password: ${e.localizedMessage}")
             }
     }
 
@@ -44,6 +57,9 @@ class ResetPasswordViewModel : ViewModel() {
             return
         }
 
+        // Hash the new password before saving it
+        val hashedPassword = hashPassword(newPassword)
+
         db.runTransaction { transaction ->
             val snapshot = transaction.get(userRef)
             if (!snapshot.exists()) {
@@ -53,8 +69,8 @@ class ResetPasswordViewModel : ViewModel() {
             }
 
             val user = snapshot.toObject(User::class.java)
-            if (user != null && user.password != newPassword) {
-                transaction.update(userRef, "password", newPassword)
+            if (user != null && user.password != hashedPassword) {
+                transaction.update(userRef, "password", hashedPassword)
                 transaction.update(userRef, "firstLogin", false)
                 Log.d("ResetPasswordViewModel", "Password updated for userId: $userId")
             }
@@ -65,5 +81,13 @@ class ResetPasswordViewModel : ViewModel() {
             _message.postValue(e.localizedMessage ?: "Unknown error occurred")
             onError(e.localizedMessage ?: "Unknown error occurred")
         }
+    }
+
+    // Hashing method
+    private fun hashPassword(password: String): String {
+        val bytes = password.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        return digest.fold("") { str, it -> str + "%02x".format(it) }
     }
 }

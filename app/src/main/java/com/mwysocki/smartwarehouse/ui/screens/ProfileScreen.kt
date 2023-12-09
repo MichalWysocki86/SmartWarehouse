@@ -137,7 +137,7 @@ fun CountdownTimerButton(sharedViewModel: SharedViewModel, userId: String) {
             sharedViewModel.generateQRCode(userId) },
         enabled = !sharedViewModel.isTimerRunning()
     ) {
-        Text(if (sharedViewModel.isTimerRunning()) "Timer: ${timeLeft}s" else "Create QR ID")
+        Text(if (sharedViewModel.isTimerRunning()) "${timeLeft}s" else "Create QR ID")
     }
     LaunchedEffect(sharedViewModel.timeLeft.collectAsState()) {
         if (sharedViewModel.timeLeft.value == 0) {

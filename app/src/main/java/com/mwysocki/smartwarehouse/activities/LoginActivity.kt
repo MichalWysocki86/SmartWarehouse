@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.mwysocki.smartwarehouse.ui.screens.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
+import java.security.MessageDigest
 
 data class User(
     val id: String = "",
@@ -49,7 +50,7 @@ class LoginActivity : ComponentActivity() {
 
     // Inner class for Login related functions
     object LoginManager {
-        fun loginUser(context: Context, username: String, password: String, onError: (String) -> Unit) {
+        fun loginUser(context: Context, username: String, enteredPassword: String, onError: (String) -> Unit) {
             val db = FirebaseFirestore.getInstance()
 
             db.collection("Users")
@@ -60,18 +61,26 @@ class LoginActivity : ComponentActivity() {
                         onError("Username not found")
                     } else {
                         val user = result.documents[0].toObject(User::class.java)
-                        if (user != null && user.password == password) {
-                            setLoggedIn(context, true)
-                            UserPrefs.setLoggedInUsername(context, username)
-                            UserPrefs.setLoggedInUserId(context, user.id)
-
-                            if (user.firstLogin && context is LoginActivity) {
-                                context.navigateToResetPasswordActivity() // Redirect to ResetPasswordActivity
-                            } else if (context is LoginActivity) {
-                                context.navigateToMainActivity()
+                        if (user != null) {
+                            // Check if the user is logging in for the first time and password is not hashed
+                            if (user.firstLogin) {
+                                // Compare entered password directly with stored password
+                                if (user.password == enteredPassword) {
+                                    proceedWithLogin(context, user, username)
+                                } else {
+                                    onError("Invalid password")
+                                }
+                            } else {
+                                // Hash the entered password and compare it with the stored hashed password
+                                val hashedEnteredPassword = hashPassword(enteredPassword)
+                                if (user.password == hashedEnteredPassword) {
+                                    proceedWithLogin(context, user, username)
+                                } else {
+                                    onError("Invalid password")
+                                }
                             }
                         } else {
-                            onError("Invalid password")
+                            onError("Invalid user data")
                         }
                     }
                 }
@@ -79,6 +88,28 @@ class LoginActivity : ComponentActivity() {
                     onError(exception.message ?: "Unknown error")
                 }
         }
+
+        private fun proceedWithLogin(context: Context, user: User, username: String) {
+            setLoggedIn(context, true)
+            UserPrefs.setLoggedInUsername(context, username)
+            UserPrefs.setLoggedInUserId(context, user.id)
+
+            if (user.firstLogin && context is LoginActivity) {
+                context.navigateToResetPasswordActivity() // Redirect to ResetPasswordActivity
+            } else if (context is LoginActivity) {
+                context.navigateToMainActivity()
+            }
+        }
+
+
+        // Reuse the same hashPassword function from your ResetPasswordViewModel
+        private fun hashPassword(password: String): String {
+            val bytes = password.toByteArray()
+            val md = MessageDigest.getInstance("SHA-256")
+            val digest = md.digest(bytes)
+            return digest.fold("", { str, it -> str + "%02x".format(it) })
+        }
+
         fun setLoggedIn(context: Context, loggedIn: Boolean) {
             val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
             with(sharedPref.edit()) {
