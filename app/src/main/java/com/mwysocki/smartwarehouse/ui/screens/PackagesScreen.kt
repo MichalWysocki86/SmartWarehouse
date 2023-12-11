@@ -6,26 +6,39 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mwysocki.smartwarehouse.activities.LoginActivity
@@ -48,41 +62,150 @@ import com.mwysocki.smartwarehouse.viewmodels.Product
 
 @Composable
 fun PackagesScreen(packagesViewModel: PackagesViewModel = viewModel()) {
-    val unassignedPackages by packagesViewModel.unassignedPackages.collectAsState()
     val context = LocalContext.current // Retrieve the context
+    val currentPackages = when (packagesViewModel.filterType.collectAsState().value) {
+        "Unassigned" -> packagesViewModel.unassignedPackages.collectAsState().value
+        else -> packagesViewModel.assignedPackages.collectAsState().value
+    }
+    val searchQuery by packagesViewModel.searchQuery.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var selectedPackageId by remember { mutableStateOf("") }
 
-    LazyColumn {
-        items(items = unassignedPackages, key = { it.id }) { pkg ->
-            PackageItem(pkg = pkg) {
-                // Set the selected package ID and show dialog
-                selectedPackageId = pkg.id
-                showDialog = true
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { packagesViewModel.setSearchQuery(it) },
+                label = { Text("Search Packages") },
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(Modifier.width(8.dp))
+
+            FilterDropdownMenu(packagesViewModel = packagesViewModel)
+        }
+
+        LazyColumn {
+            items(items = currentPackages, key = { it.id }) { pkg ->
+                PackageItem(pkg = pkg) {
+                    // Set the selected package ID and show dialog
+                    selectedPackageId = pkg.id
+                    showDialog = true
+                }
             }
         }
     }
 
     // Show the dialog when a package is selected
     if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Assign Package") },
-            text = { Text("Do you want to assign this package to yourself?") },
-            confirmButton = {
-                Button(onClick = {
-                    packagesViewModel.assignPackageToCurrentUser(context, selectedPackageId)
-                    showDialog = false
-                }) {
-                    Text("Assign to Me")
-                }
+        PackageActionDialog(
+            packageId = selectedPackageId,
+            onAssignToMe = {
+                packagesViewModel.assignPackageToCurrentUser(context, selectedPackageId)
+                showDialog = false
             },
-            dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("Go Back")
+            onDelete = {
+                packagesViewModel.deletePackage(selectedPackageId)
+                showDialog = false
+            },
+            onDismiss = { showDialog = false }
+        )
+    }
+}
+
+@Composable
+fun PackageActionDialog(
+    packageId: String,
+    onAssignToMe: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Package Actions") },
+        text = { Text("Select an action for package ID: $packageId") },
+        confirmButton = {
+            Column(
+                modifier = Modifier.padding(all = 8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Using a custom style for the button might help fit the text
+                    Button(
+                        onClick = onAssignToMe,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp), // Add some padding to avoid touching the next button
+                        contentPadding = PaddingValues(horizontal = 8.dp) // Reduce horizontal padding inside the button
+                    ) {
+                        Text(
+                            "Assign to Me",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis // Add an ellipsis if the text is too long
+                        )
+                    }
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Go Back")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Delete Package", color = Color.White)
                 }
             }
-        )
+        }
+    )
+}
+@Composable
+fun FilterDropdownMenu(packagesViewModel: PackagesViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    val filterOptions = listOf("Unassigned", "Assigned")
+
+    Box(modifier = Modifier.padding(end = 8.dp)) {
+        IconButton(
+            onClick = { expanded = true },
+            modifier = Modifier
+                .size(36.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = CircleShape
+                )
+                .padding(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Filter Options",
+                tint = Color.White // White arrow icon
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            filterOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        packagesViewModel.setFilterType(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -101,6 +224,7 @@ fun PackageItem(pkg: Package, onPackageSelected: (Package) -> Unit) {
             Text(text = "Package ID: ${pkg.id}", style = MaterialTheme.typography.titleMedium)
             Text(text = "Created by: ${pkg.createdBy}", style = MaterialTheme.typography.bodyLarge)
             Text(text = "Creation date: ${pkg.creationDate}", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Assigned to: ${pkg.assignedTo}", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

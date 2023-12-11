@@ -36,6 +36,63 @@ class PackagesViewModel : ViewModel() {
     val assignedPackages: StateFlow<List<Package>> = _assignedPackages.asStateFlow()
 
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _filterType = MutableStateFlow("Unassigned")
+    val filterType: StateFlow<String> = _filterType.asStateFlow()
+
+
+    fun deletePackage(packageId: String) {
+        viewModelScope.launch {
+            val packageRef = FirebaseFirestore.getInstance().collection("Packages").document(packageId)
+            packageRef.delete()
+                .addOnSuccessListener {
+                    Log.d("PackagesViewModel", "Package successfully deleted: $packageId")
+                    // Refresh the packages list after deletion
+                    if (_filterType.value == "Unassigned") {
+                        loadUnassignedPackages()
+                    } else {
+                        loadAllAssignedPackages()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("PackagesViewModel", "Error deleting package: $packageId", e)
+                }
+        }
+    }
+    fun setFilterType(type: String) {
+        _filterType.value = type
+        if (type == "Unassigned") {
+            loadUnassignedPackages()
+        } else {
+            loadAllAssignedPackages()
+        }
+    }
+
+    private fun loadAllAssignedPackages() {
+        viewModelScope.launch {
+            FirebaseFirestore.getInstance().collection("Packages")
+                .whereNotEqualTo("assignedTo", "")
+                .whereEqualTo("done", false)
+                .get()
+                .addOnSuccessListener { result ->
+                    val packages = result.mapNotNull { document ->
+                        document.toObject(Package::class.java)
+                    }.also { fullList ->
+                        Log.d("PackagesViewModel", "All assigned packages fetched: $fullList")
+                    }.filter {
+                        it.id.contains(_searchQuery.value, ignoreCase = true) ||
+                                it.assignedTo.contains(_searchQuery.value, ignoreCase = true)
+                    }
+                    Log.d("PackagesViewModel", "Filtered assigned packages: $packages")
+                    _assignedPackages.value = packages
+                }
+                .addOnFailureListener { e ->
+                    Log.e("PackagesViewModel", "Error fetching assigned packages", e)
+                }
+        }
+    }
 
     fun loadAssignedPackages(username: String) {
         viewModelScope.launch {
@@ -88,6 +145,7 @@ class PackagesViewModel : ViewModel() {
         }
     }
 
+    // Update this function to handle search filtering
     private fun loadUnassignedPackages() {
         viewModelScope.launch {
             FirebaseFirestore.getInstance().collection("Packages")
@@ -96,14 +154,23 @@ class PackagesViewModel : ViewModel() {
                 .get()
                 .addOnSuccessListener { result ->
                     val packages = result.mapNotNull { document ->
-                        val pkg = document.toObject(Package::class.java)
-                        pkg?.products = pkg.products.mapKeys { entry ->
-                            productsMap[entry.key] ?: "Unknown Product"
-                        }
-                        pkg
+                        document.toObject(Package::class.java)
+                    }.filter {
+                        it.id.contains(_searchQuery.value, ignoreCase = true) ||
+                                it.assignedTo.contains(_searchQuery.value, ignoreCase = true)
                     }
                     _unassignedPackages.value = packages
                 }
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+        // Check the current filter type and load the appropriate set of packages
+        if (_filterType.value == "Unassigned") {
+            loadUnassignedPackages()
+        } else {
+            loadAllAssignedPackages()
         }
     }
 
