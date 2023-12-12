@@ -3,6 +3,7 @@ package com.mwysocki.smartwarehouse.ui.screens
 import android.app.Activity
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -258,6 +259,7 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
     val context = LocalContext.current // Retrieve the context
     val selectedProducts = remember { mutableStateListOf<String>() }
     val allProductsSelected = selectedProducts.size == pkg.products.size
+    var currentScanningProduct by remember { mutableStateOf<Product?>(null) }
 
     // Prepare a list of Pair<Product, Int> for each product in the package
     val productsWithQuantity = pkg.products.mapNotNull { (productId, quantity) ->
@@ -270,14 +272,14 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val scannedQRCode = result.data?.getStringExtra("SCANNED_QR")
-            scannedQRCode?.let {
-                // Compare the scanned QR code with product QR code and update selected products
-                productsWithQuantity.forEach { (product, _) ->
-                    if (product.id == scannedQRCode) {
-                        Log.d("QRScanActivity", "Stuttu: $scannedQRCode")
-                        selectedProducts.add(product.id)
-                    }
+            scannedQRCode?.let { code ->
+                if (currentScanningProduct?.id == code) {
+                    selectedProducts.add(code)
+                    Toast.makeText(context, "Product scanned successfully.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "This is not the correct product to scan next.", Toast.LENGTH_LONG).show()
                 }
+                currentScanningProduct = null // Reset the current scanning product
             }
         }
     }
@@ -294,6 +296,7 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
                         isSelected = selectedProducts.contains(product.id),
                         onProductClick = {
                             if (!selectedProducts.contains(product.id)) {
+                                currentScanningProduct = product // Set the current product for scanning
                                 launcher.launch(Intent(context, QRScanActivity::class.java))
                             }
                         }
