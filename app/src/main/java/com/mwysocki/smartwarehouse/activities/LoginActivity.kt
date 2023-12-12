@@ -10,14 +10,15 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.security.MessageDigest
 
 data class User(
-    val id: String = "",
+    var id: String = "",
     val username: String = "",
     var password: String = "",
     var firstLogin: Boolean = true,
     var profilePictureUrl: String? = null,
     var email: String = "",
     var firstname: String = "",
-    var lastname: String = ""
+    var lastname: String = "",
+    var isManager: Boolean = false
 )
 
 class LoginActivity : ComponentActivity() {

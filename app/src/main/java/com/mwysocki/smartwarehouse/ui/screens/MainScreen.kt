@@ -145,10 +145,7 @@ fun MainApp(
                     PackagesScreen()
                 }
                 composable(route = MainScreen.Settings.name) {
-                    SettingsScreen(settingsViewModel = settingsViewModel, onChangePasswordClicked = {
-                        val intent = Intent(context, ResetPasswordActivity::class.java)
-                        context.startActivity(intent)
-                    })
+                    SettingsScreen(settingsViewModel = settingsViewModel, context = LocalContext.current)
                 }
 
 
