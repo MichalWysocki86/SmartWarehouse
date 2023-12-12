@@ -83,6 +83,7 @@ enum class MainScreen(@StringRes val title: Int) {
 
 @Composable
 fun MainApp(
+    packagesViewModel: PackagesViewModel,
     navController: NavHostController = rememberNavController(),
     mainViewModel: MainViewModel = viewModel(),
     logoutUser: () -> Unit
@@ -95,7 +96,6 @@ fun MainApp(
     )
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val packagesViewModel: PackagesViewModel = viewModel()
     val sharedViewModel: SharedViewModel = viewModel()
     val settingsViewModel: SettingsViewModel = viewModel()
 
@@ -125,15 +125,10 @@ fun MainApp(
             ) {
                 composable(route = MainScreen.Home.name) {
                     val username = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@composable
-                    // This will load the packages assigned to the logged-in user
-                    Log.d("TTTT","$username")
                     packagesViewModel.loadAssignedPackages(username)
 
-                    //TODO change this code to look like under
-
-                    // Now you can use the assignedPackages StateFlow to collect and display the packages
                     val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
-                    AssignedPackagesScreen(assignedPackages)
+                    AssignedPackagesScreen(assignedPackages, packagesViewModel)
                 }
                 composable(route = MainScreen.Profile.name) {
                     ProfileScreen(sharedViewModel)

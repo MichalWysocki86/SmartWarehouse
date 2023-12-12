@@ -42,6 +42,18 @@ class PackagesViewModel : ViewModel() {
     private val _filterType = MutableStateFlow("Unassigned")
     val filterType: StateFlow<String> = _filterType.asStateFlow()
 
+    // Map to keep track of scanned products for each package
+    private val _scannedProducts = mutableMapOf<String, List<String>>()
+    val scannedProducts: Map<String, List<String>> = _scannedProducts
+
+    fun markProductAsScanned(packageId: String, productId: String) {
+        val currentScanned = _scannedProducts[packageId].orEmpty()
+        if (productId !in currentScanned) {
+            _scannedProducts[packageId] = currentScanned + productId
+        }
+    }
+
+
 
     fun deletePackage(packageId: String) {
         viewModelScope.launch {

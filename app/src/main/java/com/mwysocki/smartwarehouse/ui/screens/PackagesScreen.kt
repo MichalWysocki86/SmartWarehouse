@@ -231,10 +231,9 @@ fun PackageItem(pkg: Package, onPackageSelected: (Package) -> Unit) {
 }
 
 @Composable
-fun AssignedPackagesScreen(assignedPackages: List<Package>) {
+fun AssignedPackagesScreen(assignedPackages: List<Package>, packagesViewModel: PackagesViewModel) {
 
-    // Obtain PackagesViewModel instance
-    val packagesViewModel: PackagesViewModel = viewModel()
+
     // Get the list of assigned packages from the ViewModel
     //val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
     var selectedPackage by remember { mutableStateOf<Package?>(null) }
@@ -248,8 +247,11 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>) {
     }
 
     selectedPackage?.let { pkg ->
-        // Pass packagesViewModel to the dialog
-        PackageDetailsDialog(pkg = pkg, packagesViewModel = packagesViewModel, onDismiss = { selectedPackage = null })
+        PackageDetailsDialog(
+            pkg = pkg,
+            packagesViewModel = packagesViewModel,
+            onDismiss = { selectedPackage = null }
+        )
     }
 }
 
@@ -257,9 +259,12 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>) {
 fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onDismiss: () -> Unit) {
     // State to keep track of selected products
     val context = LocalContext.current // Retrieve the context
-    val selectedProducts = remember { mutableStateListOf<String>() }
-    val allProductsSelected = selectedProducts.size == pkg.products.size
+    val initialScannedProducts = packagesViewModel.scannedProducts[pkg.id].orEmpty()
+    val scannedProducts = packagesViewModel.scannedProducts[pkg.id].orEmpty()
+    val selectedProducts = remember { mutableStateListOf<String>().apply { addAll(initialScannedProducts) } }
     var currentScanningProduct by remember { mutableStateOf<Product?>(null) }
+    val allProductsSelected = selectedProducts.size == pkg.products.size
+
 
     // Prepare a list of Pair<Product, Int> for each product in the package
     val productsWithQuantity = pkg.products.mapNotNull { (productId, quantity) ->
@@ -273,8 +278,9 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
         if (result.resultCode == Activity.RESULT_OK) {
             val scannedQRCode = result.data?.getStringExtra("SCANNED_QR")
             scannedQRCode?.let { code ->
-                if (currentScanningProduct?.id == code) {
-                    selectedProducts.add(code)
+                if (currentScanningProduct?.id == scannedQRCode) {
+                    selectedProducts.add(scannedQRCode)
+                    packagesViewModel.markProductAsScanned(pkg.id, scannedQRCode)
                     Toast.makeText(context, "Product scanned successfully.", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(context, "This is not the correct product to scan next.", Toast.LENGTH_LONG).show()
