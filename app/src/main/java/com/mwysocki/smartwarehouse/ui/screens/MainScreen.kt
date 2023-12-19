@@ -180,14 +180,6 @@ fun MainAppBar(
                     contentDescription = "Menu"
                 )
             }
-        },
-        actions = {
-            IconButton(onClick = { /* do something */ }) {
-                Icon(
-                    imageVector = Icons.Filled.QrCodeScanner,
-                    contentDescription = "Add Package by Qr Code"
-                )
-            }
         }
     )
 }

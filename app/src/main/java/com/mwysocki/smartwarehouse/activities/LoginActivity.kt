@@ -3,6 +3,7 @@ package com.mwysocki.smartwarehouse.activities
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.mwysocki.smartwarehouse.ui.screens.LoginScreen
@@ -18,7 +19,7 @@ data class User(
     var email: String = "",
     var firstname: String = "",
     var lastname: String = "",
-    var isManager: Boolean = false
+    var isManager: Boolean = true
 )
 
 class LoginActivity : ComponentActivity() {
@@ -63,6 +64,7 @@ class LoginActivity : ComponentActivity() {
                     } else {
                         val user = result.documents[0].toObject(User::class.java)
                         if (user != null) {
+                            Log.d("LoginManager", "Retrieved user: ${user.username}, IsManager: ${user.isManager}")
                             // Check if the user is logging in for the first time and password is not hashed
                             if (user.firstLogin) {
                                 // Compare entered password directly with stored password
@@ -94,6 +96,7 @@ class LoginActivity : ComponentActivity() {
             setLoggedIn(context, true)
             UserPrefs.setLoggedInUsername(context, username)
             UserPrefs.setLoggedInUserId(context, user.id)
+            UserPrefs.setLoggedInUserIsManager(context, user.isManager)
 
             if (user.firstLogin && context is LoginActivity) {
                 context.navigateToResetPasswordActivity() // Redirect to ResetPasswordActivity
@@ -151,6 +154,19 @@ class LoginActivity : ComponentActivity() {
         fun getLoggedInUserId(context: Context): String? {
             val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
             return sharedPref.getString("loggedInUserId", null)
+        }
+
+        fun setLoggedInUserIsManager(context: Context, isManager: Boolean) {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            with(sharedPref.edit()) {
+                putBoolean("loggedInUserIsManager", isManager)
+                apply()
+            }
+        }
+
+        fun getLoggedInUserIsManager(context: Context): Boolean {
+            val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+            return sharedPref.getBoolean("loggedInUserIsManager", false)
         }
     }
 }

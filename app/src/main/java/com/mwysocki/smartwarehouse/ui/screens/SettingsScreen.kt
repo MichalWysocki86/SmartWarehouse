@@ -2,6 +2,8 @@ package com.mwysocki.smartwarehouse.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,8 +44,14 @@ import com.mwysocki.smartwarehouse.viewmodels.SettingsViewModel
 
 @Composable
 fun SettingsScreen(settingsViewModel: SettingsViewModel, context: Context) {
-    val settingsList = listOf("Change password", "Add New User", "Delete User")
-    var showDeleteUserDialog by remember { mutableStateOf(false) }
+    var settingsList = listOf("Change password")
+    val isManager = LoginActivity.UserPrefs.getLoggedInUserIsManager(context)
+    Log.d("SettingsScreen", "Is user a manager? $isManager")
+
+    // Add management options if the user is a manager
+    if (isManager) {
+        settingsList += listOf("Add New User", "Delete User")
+    }
     LazyColumn {
         items(settingsList) { settingName ->
             SettingItem(settingName = settingName) {
@@ -53,10 +61,18 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel, context: Context) {
                         context.startActivity(intent)
                     }
                     "Add New User" -> {
-                        settingsViewModel.showAddUserDialog()
+                        if (isManager) {
+                            settingsViewModel.showAddUserDialog()
+                        }
+                        else
+                        {
+                            Toast.makeText(context, "You do not have permission for that. Ask manager for that operation", Toast.LENGTH_LONG).show()
+                        }
                     }
                     "Delete User" -> {
-                        settingsViewModel.showDeleteUserDialog()
+                        if (isManager) {
+                            settingsViewModel.showDeleteUserDialog()
+                        }
                     }
                 }
             }

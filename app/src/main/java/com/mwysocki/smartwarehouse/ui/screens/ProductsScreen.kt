@@ -23,6 +23,7 @@ import com.mwysocki.smartwarehouse.viewmodels.Product
 import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +41,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.derivedStateOf
+import com.mwysocki.smartwarehouse.activities.LoginActivity
 
 val LightBlue = Color(0xFFADD8E6)  // Define LightBlue color
 @Composable
@@ -483,6 +485,8 @@ fun ProductEditDialog(
     onConfirm: (Product) -> Unit,
     onDelete: () -> Unit
 ) {
+    val context = LocalContext.current
+    val isManager = LoginActivity.UserPrefs.getLoggedInUserIsManager(context)
     var name by remember { mutableStateOf(product.name) }
     var description by remember { mutableStateOf(product.description) }
     var quantity by remember { mutableStateOf(product.quantity.toString()) }
@@ -544,12 +548,17 @@ fun ProductEditDialog(
 
                 // Delete Button
                 Button(
-                    onClick = onDelete,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(contentColorFor(backgroundColor = Color.Red))
+                    onClick = {
+                        if (isManager) {
+                            onDelete()
+                        } else {
+                            Toast.makeText(context, "Only managers can delete products.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 ) {
-                    Text("Delete")
+                    Text("Delete", color = Color.White)
                 }
             }
         },

@@ -126,6 +126,9 @@ fun PackageActionDialog(
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val isManager = LoginActivity.UserPrefs.getLoggedInUserIsManager(context)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Package Actions") },
@@ -138,19 +141,13 @@ fun PackageActionDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Using a custom style for the button might help fit the text
                     Button(
                         onClick = onAssignToMe,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = 4.dp), // Add some padding to avoid touching the next button
-                        contentPadding = PaddingValues(horizontal = 8.dp) // Reduce horizontal padding inside the button
+                            .padding(end = 4.dp)
                     ) {
-                        Text(
-                            "Assign to Me",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis // Add an ellipsis if the text is too long
-                        )
+                        Text("Assign to Me")
                     }
                     TextButton(
                         onClick = onDismiss,
@@ -161,7 +158,13 @@ fun PackageActionDialog(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = onDelete,
+                    onClick = {
+                        if (isManager) {
+                            onDelete()
+                        } else {
+                            Toast.makeText(context, "Only managers can delete packages.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     modifier = Modifier.fillMaxWidth()
                 ) {
