@@ -24,9 +24,10 @@ data class Product(
     val name: String = "",
     var quantity: Int = 0,
     val description: String = "",
-    val producer: String = "", // Add this line
+    val producer: String = "",
     val qrCode: String = "",
-    val addedBy: String = ""
+    val addedBy: String = "",
+    var modifyBy: String = ""
 )
 
 data class ProductsState(
@@ -202,7 +203,8 @@ class ProductsViewModel : ViewModel() {
                     description = productDescription,
                     producer = producerName,
                     qrCode = qrCodeData,
-                    addedBy = loggedInUsername
+                    addedBy = loggedInUsername,
+                    modifyBy = loggedInUsername
                 )
 
                 Log.d("ProductsViewModel", "Adding new product: $productName")

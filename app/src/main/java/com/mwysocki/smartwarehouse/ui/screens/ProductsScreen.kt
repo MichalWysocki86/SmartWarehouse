@@ -491,7 +491,8 @@ fun ProductEditDialog(
     var description by remember { mutableStateOf(product.description) }
     var quantity by remember { mutableStateOf(product.quantity.toString()) }
     var producer by remember { mutableStateOf(product.producer) }
-
+    var modifyBy by remember { mutableStateOf(product.modifyBy) }
+    val loggedInUsername = LoginActivity.UserPrefs.getLoggedInUsername(context)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Product") },
@@ -527,13 +528,18 @@ fun ProductEditDialog(
                 ) {
 
                     Button(onClick = {
-                        val updatedProduct = product.copy(
-                            name = name,
-                            description = description,
-                            quantity = quantity.toIntOrNull() ?: product.quantity,
-                            producer = producer
-                        )
-                        onConfirm(updatedProduct)
+                        val updatedProduct = loggedInUsername?.let {
+                            product.copy(
+                                name = name,
+                                description = description,
+                                quantity = quantity.toIntOrNull() ?: product.quantity,
+                                producer = producer,
+                                modifyBy = it
+                            )
+                        }
+                        if (updatedProduct != null) {
+                            onConfirm(updatedProduct)
+                        }
                     }) {
                         Text("Save Changes")
                     }
