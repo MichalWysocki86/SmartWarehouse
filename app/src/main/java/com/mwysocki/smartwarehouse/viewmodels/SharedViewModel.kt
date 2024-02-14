@@ -2,15 +2,17 @@ package com.mwysocki.smartwarehouse.viewmodels
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
-import java.text.SimpleDateFormat
-import java.util.*
 import android.os.CountDownTimer
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class SharedViewModel : ViewModel() {
     private val _timeLeft = MutableStateFlow(2 * 60) // 2 minutes
@@ -25,8 +27,8 @@ class SharedViewModel : ViewModel() {
     val qrCodeBitmap: StateFlow<Bitmap?> = _qrCodeBitmap
 
     fun startTimer() {
-        timer?.cancel() // Cancel any existing timer
-        _timeLeft.value = 2 * 60 // Reset the timer value to 2 minutes
+        timer?.cancel()
+        _timeLeft.value = 2 * 60
 
         _triggerRecomposition.value += 1
 

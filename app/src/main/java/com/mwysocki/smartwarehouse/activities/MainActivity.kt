@@ -23,17 +23,13 @@ data class NavigationItem(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Create the PackagesViewModel scoped to this activity
         val packagesViewModel: PackagesViewModel by viewModels()
-
         setContent {
             MainApp(
                 packagesViewModel = packagesViewModel,
                 logoutUser = ::logoutUser
             )
         }
-
     }
 
     private fun logoutUser() {

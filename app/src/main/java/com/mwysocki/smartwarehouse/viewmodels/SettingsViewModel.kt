@@ -7,7 +7,6 @@ import com.mwysocki.smartwarehouse.activities.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.UUID
 
 class SettingsViewModel : ViewModel() {
     private val _showAddUserDialog = MutableStateFlow(false)
@@ -51,28 +50,18 @@ class SettingsViewModel : ViewModel() {
     }
 
     fun deleteUser(userId: String, onResult: (Boolean) -> Unit) {
-        // Create a reference to the Firestore instance
         val firestore = FirebaseFirestore.getInstance()
-
-        // Begin a batch write to perform multiple write operations as a single transaction
         val batch = firestore.batch()
-
-        // Step 1: Update any packages that are assigned to this user
         firestore.collection("Packages")
             .whereEqualTo("assignedTo", userId)
             .get()
             .addOnSuccessListener { result ->
                 for (document in result) {
                     val packageRef = firestore.collection("Packages").document(document.id)
-                    // Update the 'assignedTo' field to an empty string
                     batch.update(packageRef, "assignedTo", "")
                 }
-
-                // Step 2: Delete the user
                 val userRef = firestore.collection("Users").document(userId)
                 batch.delete(userRef)
-
-                // Commit the batch
                 batch.commit().addOnSuccessListener {
                     Log.d("SettingsViewModel", "User and related packages updated successfully: $userId")
                     fetchUsers() // Refresh the list after deletion
@@ -88,16 +77,11 @@ class SettingsViewModel : ViewModel() {
     }
 
     fun addUser(username: String, password: String, email: String, firstname: String, lastname: String, isManager: Boolean, onUserAdded: (Boolean) -> Unit) {
-        // Check for required fields
         if(username.isBlank() || password.isBlank() || firstname.isBlank() || lastname.isBlank()) {
             onUserAdded(false)
             return
         }
-
-        // Create a new user with a Firebase-generated ID
         val userRef = FirebaseFirestore.getInstance().collection("Users").document()
-
-
         val newUser = User(
             id = userRef.id,
             username = username,

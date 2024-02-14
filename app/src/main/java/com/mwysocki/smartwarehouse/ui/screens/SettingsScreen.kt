@@ -24,7 +24,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,9 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import com.mwysocki.smartwarehouse.activities.ResetPasswordActivity
 import com.mwysocki.smartwarehouse.activities.User
@@ -48,7 +45,6 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel, context: Context) {
     val isManager = LoginActivity.UserPrefs.getLoggedInUserIsManager(context)
     Log.d("SettingsScreen", "Is user a manager? $isManager")
 
-    // Add management options if the user is a manager
     if (isManager) {
         settingsList += listOf("Add New User", "Delete User")
     }
@@ -126,11 +122,6 @@ fun AddUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit) {
     var isManager by remember { mutableStateOf(false) }
     var isAddingUser by remember { mutableStateOf(false) }
 
-//    if(isAddingUser) {
-//        // Show a loading indicator or disable the button
-//    }
-
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add New User") },
@@ -145,7 +136,6 @@ fun AddUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit) {
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
-                    //visualTransformation = PasswordVisualTransformation()
                 )
                 TextField(
                     value = email,
@@ -177,7 +167,6 @@ fun AddUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit) {
                     isAddingUser = true
                     settingsViewModel.addUser(username, password, email, firstname, lastname, isManager) { success ->
                         isAddingUser = false
-                        //onUserAdded(success)
                         if(success) onDismiss()
                     }
                 },
@@ -204,7 +193,6 @@ fun AddUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit) {
 fun DeleteUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit, loggedInUserId: String) {
     val allUsers by settingsViewModel.users.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    // Filter out the current logged-in user from the list
     val filteredUsers = allUsers.filterNot { it.id == loggedInUserId }.filter {
         it.username.contains(searchQuery, ignoreCase = true) ||
                 it.id.contains(searchQuery, ignoreCase = true)
@@ -226,9 +214,9 @@ fun DeleteUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit
                         UserCard(user, onUserClicked = {
                             settingsViewModel.deleteUser(user.id) { success ->
                                 if (success) {
-                                    onDismiss() // Dismiss the dialog and show a success message
+                                    onDismiss()
                                 } else {
-                                    // Show an error message
+
                                 }
                             }
                         }, settingsViewModel)
@@ -236,15 +224,13 @@ fun DeleteUserDialog(settingsViewModel: SettingsViewModel, onDismiss: () -> Unit
                 }
             }
         },
-        confirmButton = { /* Optionally add buttons if needed */ }
+        confirmButton = {}
     )
 }
 
 @Composable
 fun UserCard(user: User, onUserClicked: (User) -> Unit, settingsViewModel: SettingsViewModel) {
     var showDialog by remember { mutableStateOf(false) }
-
-    // Confirmation dialog
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },

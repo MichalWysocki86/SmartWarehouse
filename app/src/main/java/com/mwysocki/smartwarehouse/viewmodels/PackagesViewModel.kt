@@ -10,39 +10,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import androidx.lifecycle.viewModelScope
-import com.google.firebase.firestore.Query
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class PackagesViewModel : ViewModel() {
     private val _unassignedPackages = MutableStateFlow<List<Package>>(emptyList())
     val unassignedPackages: StateFlow<List<Package>> = _unassignedPackages.asStateFlow()
-
-    private val productsMap = mutableMapOf<String, String>()
-
-    // Map to store Product details along with their ordered quantity in a package
     private val productsInPackage = mutableMapOf<Product, Int>()
-
-    // This map will now store the complete product information
     val productsInfoMap = mutableMapOf<String, Product>()
-
     init {
         fetchAllProducts()
         loadUnassignedPackages()
     }
-
     private val _assignedPackages = MutableStateFlow<List<Package>>(emptyList())
     val assignedPackages: StateFlow<List<Package>> = _assignedPackages.asStateFlow()
-
-
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
     private val _filterType = MutableStateFlow("Unassigned")
     val filterType: StateFlow<String> = _filterType.asStateFlow()
-
-    // Map to keep track of scanned products for each package
     private val _scannedProducts = mutableMapOf<String, List<String>>()
     val scannedProducts: Map<String, List<String>> = _scannedProducts
 
@@ -53,15 +36,12 @@ class PackagesViewModel : ViewModel() {
         }
     }
 
-
-
     fun deletePackage(packageId: String) {
         viewModelScope.launch {
             val packageRef = FirebaseFirestore.getInstance().collection("Packages").document(packageId)
             packageRef.delete()
                 .addOnSuccessListener {
                     Log.d("PackagesViewModel", "Package successfully deleted: $packageId")
-                    // Refresh the packages list after deletion
                     if (_filterType.value == "Unassigned") {
                         loadUnassignedPackages()
                     } else {
@@ -127,7 +107,6 @@ class PackagesViewModel : ViewModel() {
         }
     }
 
-    // Function to update the productsInPackage map
     private fun updateProductsInPackage(pkg: Package) {
         pkg.products.forEach { (productId, orderedQuantity) ->
             FirebaseFirestore.getInstance().collection("Products").document(productId)
@@ -157,7 +136,6 @@ class PackagesViewModel : ViewModel() {
         }
     }
 
-    // Update this function to handle search filtering
     private fun loadUnassignedPackages() {
         viewModelScope.launch {
             FirebaseFirestore.getInstance().collection("Packages")
@@ -178,7 +156,6 @@ class PackagesViewModel : ViewModel() {
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
-        // Check the current filter type and load the appropriate set of packages
         if (_filterType.value == "Unassigned") {
             loadUnassignedPackages()
         } else {
@@ -188,11 +165,7 @@ class PackagesViewModel : ViewModel() {
 
     fun assignPackageToCurrentUser(context: Context, packageId: String) {
         val username = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: "Unknown User"
-
-        // Get the reference to the package document
         val packageRef = FirebaseFirestore.getInstance().collection("Packages").document(packageId)
-
-        // Set the 'assignedTo' field of this package
         packageRef.update("assignedTo", username)
             .addOnSuccessListener {
                 Log.d("PackagesViewModel", "Package $packageId assigned to $username")
@@ -209,7 +182,6 @@ class PackagesViewModel : ViewModel() {
             val firestore = FirebaseFirestore.getInstance()
             val packageRef = firestore.collection("Packages").document(packageId)
 
-            // Get the current package data
             packageRef.get().addOnSuccessListener { documentSnapshot ->
                 val packageData = documentSnapshot.toObject(Package::class.java)
                 packageData?.let { pkg ->
@@ -226,7 +198,6 @@ class PackagesViewModel : ViewModel() {
                             }
                         }
                     }
-                    // Set the 'done' field to true and move the package to the archive
                     val updatedPackageData = pkg.copy(isDone = true)
                     firestore.collection("PackagesArchive")
                         .document(packageId)
@@ -247,5 +218,4 @@ class PackagesViewModel : ViewModel() {
             }
         }
     }
-
 }

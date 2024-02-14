@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import com.google.firebase.firestore.FirebaseFirestore
 import com.mwysocki.smartwarehouse.ui.screens.ResetPasswordScreen
 import com.mwysocki.smartwarehouse.viewmodels.ResetPasswordViewModel
 
@@ -17,14 +16,11 @@ class ResetPasswordActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
         setContent {
             ResetPasswordScreen(onPasswordChangeRequested = { oldPassword, newPassword, confirmPassword ->
                 if (newPassword == confirmPassword) {
                     val username = LoginActivity.UserPrefs.getLoggedInUsername(this)
                     val userId = LoginActivity.UserPrefs.getLoggedInUserId(this)
-
                     if (username != null && userId != null) {
                         viewModel.verifyOldPassword(username, oldPassword, onSuccess = {
                             viewModel.updatePassword(userId, newPassword, onSuccess = {
@@ -46,7 +42,6 @@ class ResetPasswordActivity : ComponentActivity() {
 
     private fun navigateToMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
-        // Check if the activity is still valid before navigating
         if (!isFinishing) {
             startActivity(intent)
             finish()
@@ -56,5 +51,4 @@ class ResetPasswordActivity : ComponentActivity() {
             Log.d("ResetPasswordActivity", "Activity finishing, not navigating")
         }
     }
-
 }

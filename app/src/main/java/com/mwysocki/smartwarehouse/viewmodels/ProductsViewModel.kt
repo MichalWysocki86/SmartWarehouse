@@ -1,23 +1,23 @@
 package com.mwysocki.smartwarehouse.viewmodels
 
 import android.content.Context
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Base64
 import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import com.mwysocki.smartwarehouse.activities.LoginActivity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 data class Product(
     val id: String = "",
@@ -42,11 +42,9 @@ data class Package(
     val createdBy: String = "",
     val assignedTo: String = "",
     val isDone: Boolean = false,
-    var products: Map<String, Int> = emptyMap(), // Make sure to provide a default empty map
-    // Ensure that the productIds list is derived from the products map to avoid deserialization issues
+    var products: Map<String, Int> = emptyMap(),
     val productIds: List<String> = products.keys.toList()
 )
-
 
 class ProductsViewModel : ViewModel() {
     private val _productsState = MutableStateFlow(ProductsState())
@@ -67,7 +65,6 @@ class ProductsViewModel : ViewModel() {
     private val _filterType = MutableStateFlow("Name")
     val filterType: StateFlow<String> = _filterType.asStateFlow()
 
-    // Function to create and save a package to Firestore
     fun createAndSavePackage(context: Context, selectedProducts: Map<String, Int>) {
         viewModelScope.launch {
             try {
@@ -233,7 +230,7 @@ class ProductsViewModel : ViewModel() {
                     .document(product.id)
                     .delete()
                     .addOnSuccessListener {
-                        fetchProducts() // Refresh the products list after deletion
+                        fetchProducts()
                         hideProductDetailDialog()
                     }
                     .addOnFailureListener { exception ->

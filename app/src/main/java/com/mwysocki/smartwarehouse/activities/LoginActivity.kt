@@ -6,8 +6,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.mwysocki.smartwarehouse.ui.screens.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
+import com.mwysocki.smartwarehouse.ui.screens.LoginScreen
 import java.security.MessageDigest
 
 data class User(
@@ -23,11 +23,8 @@ data class User(
 )
 
 class LoginActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Check if the user is already logged in
         val isLoggedIn = LoginManager.getLoginStatus(this)
         if (isLoggedIn) {
             navigateToMainActivity()
@@ -50,9 +47,13 @@ class LoginActivity : ComponentActivity() {
         finish()
     }
 
-    // Inner class for Login related functions
     object LoginManager {
-        fun loginUser(context: Context, username: String, enteredPassword: String, onError: (String) -> Unit) {
+        fun loginUser(
+            context: Context,
+            username: String,
+            enteredPassword: String,
+            onError: (String) -> Unit
+        ) {
             val db = FirebaseFirestore.getInstance()
 
             db.collection("Users")
@@ -64,17 +65,17 @@ class LoginActivity : ComponentActivity() {
                     } else {
                         val user = result.documents[0].toObject(User::class.java)
                         if (user != null) {
-                            Log.d("LoginManager", "Retrieved user: ${user.username}, IsManager: ${user.isManager}")
-                            // Check if the user is logging in for the first time and password is not hashed
+                            Log.d(
+                                "LoginManager",
+                                "Retrieved user: ${user.username}, IsManager: ${user.isManager}"
+                            )
                             if (user.firstLogin) {
-                                // Compare entered password directly with stored password
                                 if (user.password == enteredPassword) {
                                     proceedWithLogin(context, user, username)
                                 } else {
                                     onError("Invalid password")
                                 }
                             } else {
-                                // Hash the entered password and compare it with the stored hashed password
                                 val hashedEnteredPassword = hashPassword(enteredPassword)
                                 if (user.password == hashedEnteredPassword) {
                                     proceedWithLogin(context, user, username)
@@ -99,14 +100,12 @@ class LoginActivity : ComponentActivity() {
             UserPrefs.setLoggedInUserIsManager(context, user.isManager)
 
             if (user.firstLogin && context is LoginActivity) {
-                context.navigateToResetPasswordActivity() // Redirect to ResetPasswordActivity
+                context.navigateToResetPasswordActivity()
             } else if (context is LoginActivity) {
                 context.navigateToMainActivity()
             }
         }
 
-
-        // Reuse the same hashPassword function from your ResetPasswordViewModel
         private fun hashPassword(password: String): String {
             val bytes = password.toByteArray()
             val md = MessageDigest.getInstance("SHA-256")
@@ -130,7 +129,6 @@ class LoginActivity : ComponentActivity() {
 
     object UserPrefs {
         fun getLoggedInUsername(context: Context): String? {
-            // The context object is correctly used to call getSharedPreferences
             val sharedPref = context.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
             return sharedPref.getString("loggedInUsername", null)
         }

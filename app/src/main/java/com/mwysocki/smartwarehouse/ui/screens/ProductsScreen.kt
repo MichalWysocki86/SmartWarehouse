@@ -1,69 +1,58 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
+import android.graphics.BitmapFactory
+import android.util.Base64
+import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.mwysocki.smartwarehouse.viewmodels.Product
-import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
-import android.graphics.BitmapFactory
-import android.util.Base64
-import android.widget.Toast
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
-import java.io.ByteArrayInputStream
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.MaterialTheme
-import com.mwysocki.smartwarehouse.viewmodels.ProductsState
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Text
-import androidx.compose.runtime.derivedStateOf
 import com.mwysocki.smartwarehouse.activities.LoginActivity
+import com.mwysocki.smartwarehouse.viewmodels.Product
+import com.mwysocki.smartwarehouse.viewmodels.ProductsState
+import com.mwysocki.smartwarehouse.viewmodels.ProductsViewModel
+import java.io.ByteArrayInputStream
 
-val LightBlue = Color(0xFFADD8E6)  // Define LightBlue color
+val LightBlue = Color(0xFFADD8E6)
 @Composable
 fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
     val productsState by productsViewModel.productsState.collectAsState()
     val searchQuery by productsViewModel.searchQuery.collectAsState()
     val showDialog by productsViewModel.showAddProductDialog.collectAsState()
     val filterType by productsViewModel.filterType.collectAsState()
-
     val selectedProduct by productsViewModel.selectedProduct.collectAsState()
     val showProductDetailDialog by productsViewModel.showProductDetailDialog.collectAsState()
-
     var showQuantityDialog by remember { mutableStateOf(false) }
     var currentSelectedProduct by remember { mutableStateOf<Product?>(null) }
-    var currentQuantity by remember { mutableStateOf(0) }
-
-
     var createPackageMode by remember { mutableStateOf(false) }
     val selectedProductQuantities = remember { mutableMapOf<String, Int>() }
     var showPackageSummaryDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-
     val filteredProducts by remember(searchQuery, filterType) {
         derivedStateOf {
             productsState.allProducts.filter {
@@ -76,7 +65,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
             }
         }
     }
-
     Scaffold(
         bottomBar = {
             BottomAppBar {
@@ -87,7 +75,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     ) {
                         Text("Create Package")
                     }
-
                     Button(
                         onClick = { createPackageMode = false },
                         modifier = Modifier.weight(1f)
@@ -141,7 +128,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     Text("Add Product")
                 }
             }
-
             if (productsState.errorMessage != null) {
                 Text(
                     text = "Error: ${productsState.errorMessage}",
@@ -173,8 +159,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     }
                 }
             }
-
-            // ... existing QuantityDialog code ...
             if (showQuantityDialog && currentSelectedProduct != null) {
                 QuantityDialog(
                     product = currentSelectedProduct,
@@ -185,7 +169,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     onDismiss = { showQuantityDialog = false }
                 )
             }
-
             if (showDialog) {
                 ProductAddDialog(
                     onAddProduct = { productName, productDescription, productQuantity, producerName ->
@@ -200,7 +183,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     onDismiss = productsViewModel::hideAddProductDialog
                 )
             }
-
             if (showPackageSummaryDialog) {
                 PackageSummaryDialog(
                     selectedProducts = selectedProductQuantities,
@@ -216,21 +198,19 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
                     }
                 )
             }
-
             selectedProduct?.let { product ->
                 if (showProductDetailDialog) {
                     ProductDetailDialog(
                         product = product,
                         onDismiss = productsViewModel::hideProductDetailDialog,
                         onModify = { updatedProduct ->
-                            // Code to handle the product update
                             productsViewModel.updateProductInFirestore(updatedProduct)
                             productsViewModel.hideProductDetailDialog()
                         },
                         onDelete = {
                             productsViewModel.deleteProductFromFirestore(it)
-                            productsViewModel.hideProductDetailDialog() // Close the dialog
-                            productsViewModel.fetchProducts() // Refresh the products list
+                            productsViewModel.hideProductDetailDialog()
+                            productsViewModel.fetchProducts()
                         }
                     )
                 }
@@ -242,7 +222,6 @@ fun ProductsScreen(productsViewModel: ProductsViewModel = viewModel()) {
 @Composable
 fun FilterDropdownMenu(productsViewModel: ProductsViewModel) {
     var expanded by remember { mutableStateOf(false) }
-    val filterType by productsViewModel.filterType.collectAsState()
     val filterOptions = listOf("Name", "Producer", "ID")
 
     Box(modifier = Modifier.padding(end = 8.dp)) {
@@ -259,7 +238,7 @@ fun FilterDropdownMenu(productsViewModel: ProductsViewModel) {
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Filter Options",
-                tint = Color.White // White arrow icon
+                tint = Color.White
             )
         }
         DropdownMenu(
@@ -340,7 +319,7 @@ fun ProductItem(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            Spacer(modifier = Modifier.weight(1f)) // This will push the quantity and checkbox to the end of the row
+            Spacer(modifier = Modifier.weight(1f))
             Text(text = "Qty: ${product.quantity}", style = MaterialTheme.typography.bodySmall)
             if (showCheckbox) {
                 Checkbox(
@@ -354,13 +333,13 @@ fun ProductItem(
 
 @Composable
 fun ProductAddDialog(
-    onAddProduct: (String, String, Int, String) -> Unit, // Add String for producer
+    onAddProduct: (String, String, Int, String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var productName by remember { mutableStateOf("") }
     var productDescription by remember { mutableStateOf("") }
     var productQuantity by remember { mutableStateOf(0) }
-    var producerName by remember { mutableStateOf("") } // Add this line
+    var producerName by remember { mutableStateOf("") }
 
     AlertDialog(
         title = { Text("Add New Product") },
@@ -383,24 +362,23 @@ fun ProductAddDialog(
                 TextField(
                     value = producerName,
                     onValueChange = { producerName = it },
-                    label = { Text("Producer Name") } // Add this TextField
+                    label = { Text("Producer Name") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 TextField(
                     value = productQuantity.toString(),
                     onValueChange = { newValue ->
-                        // Only update if the new value can be converted to an Int or is blank
                         productQuantity = newValue.toIntOrNull() ?: 0
                     },
                     label = { Text("Product Quantity") },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number) // Set the keyboard type to number
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
             }
         },
         confirmButton = {
             Button(onClick = {
-                onAddProduct(productName, productDescription, productQuantity, producerName) // Pass producerName
+                onAddProduct(productName, productDescription, productQuantity, producerName)
             }) {
                 Text("Add")
             }
@@ -456,7 +434,7 @@ fun ProductDetailDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 QRCodeImage(qrCodeBase64 = product.qrCode)
-                Spacer(modifier = Modifier.height(16.dp))  // Additional spacing before the buttons
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.Center,
@@ -518,15 +496,11 @@ fun ProductEditDialog(
                     onValueChange = { quantity= it },
                     label = { Text("Quantity") }
                 )
-                // Repeat for description, quantity, and producer
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Save Changes and Cancel Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     Button(onClick = {
                         val updatedProduct = loggedInUsername?.let {
                             product.copy(
@@ -549,10 +523,7 @@ fun ProductEditDialog(
                     }
 
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Delete Button
                 Button(
                     onClick = {
                         if (isManager) {
@@ -568,12 +539,10 @@ fun ProductEditDialog(
                 }
             }
         },
-        confirmButton = {}, // Empty as buttons are included in text
-        dismissButton = {}  // Empty as buttons are included in text
+        confirmButton = {},
+        dismissButton = {}
     )
 }
-
-
 @Composable
 fun QuantityDialog(product: Product?, onQuantityConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
     if (product != null) {

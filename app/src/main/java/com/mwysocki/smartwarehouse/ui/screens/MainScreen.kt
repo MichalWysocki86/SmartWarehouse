@@ -1,11 +1,7 @@
 package com.mwysocki.smartwarehouse.ui.screens
 
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -16,7 +12,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material.icons.outlined.ExitToApp
@@ -50,7 +45,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -63,11 +57,9 @@ import androidx.navigation.compose.rememberNavController
 import com.mwysocki.smartwarehouse.R
 import com.mwysocki.smartwarehouse.activities.LoginActivity
 import com.mwysocki.smartwarehouse.activities.NavigationItem
-import com.mwysocki.smartwarehouse.activities.ResetPasswordActivity
 import com.mwysocki.smartwarehouse.ui.theme.SmartWarehouseTheme
 import com.mwysocki.smartwarehouse.viewmodels.MainViewModel
 import com.mwysocki.smartwarehouse.viewmodels.PackagesViewModel
-import com.mwysocki.smartwarehouse.viewmodels.ProfileViewModel
 import com.mwysocki.smartwarehouse.viewmodels.SettingsViewModel
 import com.mwysocki.smartwarehouse.viewmodels.SharedViewModel
 import kotlinx.coroutines.launch
@@ -90,7 +82,6 @@ fun MainApp(
 ) {
     val state by mainViewModel.uiState.collectAsState()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    // Get the name of the current screen
     val currentScreen = MainScreen.valueOf(
         backStackEntry?.destination?.route ?: MainScreen.Home.name
     )
@@ -114,7 +105,7 @@ fun MainApp(
                     onMenuClick = {
                         scope.launch { drawerState.open() }
                     },
-                    navController = navController // Pass the navController here
+                    navController = navController
                 )
             }
         ) { paddingValues ->

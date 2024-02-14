@@ -2,20 +2,16 @@ package com.mwysocki.smartwarehouse.ui.screens
 
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -51,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mwysocki.smartwarehouse.activities.LoginActivity
@@ -63,7 +58,7 @@ import com.mwysocki.smartwarehouse.viewmodels.Product
 
 @Composable
 fun PackagesScreen(packagesViewModel: PackagesViewModel = viewModel()) {
-    val context = LocalContext.current // Retrieve the context
+    val context = LocalContext.current
     val currentPackages = when (packagesViewModel.filterType.collectAsState().value) {
         "Unassigned" -> packagesViewModel.unassignedPackages.collectAsState().value
         else -> packagesViewModel.assignedPackages.collectAsState().value
@@ -85,24 +80,18 @@ fun PackagesScreen(packagesViewModel: PackagesViewModel = viewModel()) {
                 label = { Text("Search Packages") },
                 modifier = Modifier.weight(1f)
             )
-
             Spacer(Modifier.width(8.dp))
-
             FilterDropdownMenu(packagesViewModel = packagesViewModel)
         }
-
         LazyColumn {
             items(items = currentPackages, key = { it.id }) { pkg ->
                 PackageItem(pkg = pkg) {
-                    // Set the selected package ID and show dialog
                     selectedPackageId = pkg.id
                     showDialog = true
                 }
             }
         }
     }
-
-    // Show the dialog when a package is selected
     if (showDialog) {
         PackageActionDialog(
             packageId = selectedPackageId,
@@ -128,7 +117,6 @@ fun PackageActionDialog(
 ) {
     val context = LocalContext.current
     val isManager = LoginActivity.UserPrefs.getLoggedInUserIsManager(context)
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Package Actions") },
@@ -235,10 +223,6 @@ fun PackageItem(pkg: Package, onPackageSelected: (Package) -> Unit) {
 
 @Composable
 fun AssignedPackagesScreen(assignedPackages: List<Package>, packagesViewModel: PackagesViewModel) {
-
-
-    // Get the list of assigned packages from the ViewModel
-    //val assignedPackages by packagesViewModel.assignedPackages.collectAsState()
     var selectedPackage by remember { mutableStateOf<Package?>(null) }
 
     LazyColumn {
@@ -248,7 +232,6 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>, packagesViewModel: P
             }
         }
     }
-
     selectedPackage?.let { pkg ->
         PackageDetailsDialog(
             pkg = pkg,
@@ -260,23 +243,17 @@ fun AssignedPackagesScreen(assignedPackages: List<Package>, packagesViewModel: P
 
 @Composable
 fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onDismiss: () -> Unit) {
-    // State to keep track of selected products
-    val context = LocalContext.current // Retrieve the context
+    val context = LocalContext.current
     val initialScannedProducts = packagesViewModel.scannedProducts[pkg.id].orEmpty()
-    val scannedProducts = packagesViewModel.scannedProducts[pkg.id].orEmpty()
     val selectedProducts = remember { mutableStateListOf<String>().apply { addAll(initialScannedProducts) } }
     var currentScanningProduct by remember { mutableStateOf<Product?>(null) }
     val allProductsSelected = selectedProducts.size == pkg.products.size
-
-
-    // Prepare a list of Pair<Product, Int> for each product in the package
     val productsWithQuantity = pkg.products.mapNotNull { (productId, quantity) ->
         packagesViewModel.productsInfoMap[productId]?.let { product ->
             product to quantity
         }
     }
 
-    // Prepare launcher for QR scan activity
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val scannedQRCode = result.data?.getStringExtra("SCANNED_QR")
@@ -292,7 +269,6 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
             }
         }
     }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Package Details") },
@@ -305,7 +281,7 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
                         isSelected = selectedProducts.contains(product.id),
                         onProductClick = {
                             if (!selectedProducts.contains(product.id)) {
-                                currentScanningProduct = product // Set the current product for scanning
+                                currentScanningProduct = product
                                 launcher.launch(Intent(context, QRScanActivity::class.java))
                             }
                         }
@@ -322,11 +298,9 @@ fun PackageDetailsDialog(pkg: Package, packagesViewModel: PackagesViewModel, onD
             Row {
                 if (allProductsSelected) {
                     Button(onClick = {
-                        // Get the logged-in username, assuming 'getLoggedInUsername' returns a non-null username
                         val loggedInUsername = LoginActivity.UserPrefs.getLoggedInUsername(context) ?: return@Button
-                        // Call 'sendPackageToArchive' with the packageId and logged-in username
                         packagesViewModel.sendPackageToArchive(pkg.id, loggedInUsername)
-                        onDismiss() // Close the dialog
+                        onDismiss()
                     }) {
                         Text("Send Package")
                     }
@@ -382,7 +356,7 @@ fun ProductCard(
                     color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
                 )
                 if (isSelected) {
-                    Spacer(modifier = Modifier.width(8.dp))  // Space between quantity and checkmark
+                    Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         Icons.Default.Check,
                         contentDescription = "Selected",
